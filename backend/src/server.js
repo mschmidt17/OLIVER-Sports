@@ -1,9 +1,10 @@
-import 'dotenv/config';
 import express from 'express';
 import sessionsRouter from './routes/sessions.routes.js';
 
+// process.env ya tiene los valores de backend/.env: los carga db/connection.js,
+// que se importa (a través de las rutas) antes de ejecutar este código.
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4000;
 
 app.use(express.json());
 app.use('/sessions', sessionsRouter);

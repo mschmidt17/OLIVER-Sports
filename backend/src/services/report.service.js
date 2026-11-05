@@ -1,4 +1,4 @@
-import { getSessionMetrics, getSessionThresholds } from './metrics.service.js';
+import { getSessionMetrics } from './metrics.service.js';
 import { buildContext } from '../domain/buildContext.js';
 import { validateReport } from '../domain/validateReport.js';
 import { generateJson } from '../ai/index.js';
@@ -23,7 +23,7 @@ export async function generateSessionReport(sessionId, options) {
   const context = buildContext({
     session: data.session,
     players: data.players,
-    thresholds: getSessionThresholds(sessionId),
+    thresholds: data.thresholds,
   });
 
   const rawText = await generateJson(buildSessionReportPrompt(context, options));

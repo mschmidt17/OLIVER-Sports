@@ -9,3 +9,6 @@ node_modules/
 
 # Enunciado del challenge (no es parte de la solución)
 CHALLENGE.pdf
+
+# Build del frontend
+dist/

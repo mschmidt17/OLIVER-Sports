@@ -1,4 +1,5 @@
 import db from '../db/connection.js';
+import { detectAlerts } from '../domain/alerts.js';
 
 // Lista blanca de columnas por las que se puede ordenar.
 // ORDER BY no admite parámetros (?), así que la columna se interpola en el SQL:
@@ -45,7 +46,7 @@ function findSession(sessionId) {
  * que es la que usa domain/alerts.js:
  *   { workload_au: { warning: 600, critical: 750 }, rpe: { warning: 8, critical: null } }
  */
-export function getSessionThresholds(sessionId) {
+function getSessionThresholds(sessionId) {
   const thresholds = {};
   for (const row of sessionThresholdsStmt.all(sessionId)) {
     thresholds[row.metric] = { warning: row.warning, critical: row.critical };
@@ -68,7 +69,9 @@ function buildOrderBy(orderBy, order) {
 }
 
 /**
- * Métricas de los jugadores de una sesión.
+ * Métricas de los jugadores de una sesión, con los umbrales del equipo y
+ * las alertas ya calculadas (domain/alerts.js). Así el frontend solo pinta:
+ * la regla de alertas vive en un único lugar.
  * Devuelve null si la sesión no existe (la ruta lo traduce a 404).
  */
 export function getSessionMetrics(sessionId, { playerId, orderBy, order } = {}) {
@@ -89,5 +92,7 @@ export function getSessionMetrics(sessionId, { playerId, orderBy, order } = {}) 
   `;
 
   const players = db.prepare(sql).all({ sessionId, playerId });
-  return { session, players };
+  const thresholds = getSessionThresholds(sessionId);
+
+  return { session, thresholds, players, alerts: detectAlerts(players, thresholds) };
 }
