@@ -1,0 +1,74 @@
+{
+  "_readme": "Datos ficticios para el challenge técnico de OLIVER. Unidades: metros (m), km/h, minutos. RPE: escala 1-10 reportada por el jugador (puede faltar: null). workload_au = rpe * minutes_played, en unidades arbitrarias (null si falta el RPE).",
+  "team": {"id": 42, "name": "Club Atlético Ficticio - Primera", "sport": "football"},
+  "thresholds": {
+    "workload_au": {"warning": 600, "critical": 750},
+    "total_distance_m": {"warning": 9500},
+    "sprints": {"warning": 28},
+    "rpe": {"warning": 8}
+  },
+  "players": [
+    {"id": 1, "name": "Martín Álvarez", "position": "FW", "shirt_number": 10},
+    {"id": 2, "name": "Lucas Romero", "position": "MF", "shirt_number": 8},
+    {"id": 3, "name": "Tomás Giménez", "position": "DF", "shirt_number": 4},
+    {"id": 4, "name": "Joaquín Pereyra", "position": "DF", "shirt_number": 2},
+    {"id": 5, "name": "Santiago Molina", "position": "MF", "shirt_number": 6},
+    {"id": 6, "name": "Facundo Ríos", "position": "FW", "shirt_number": 9},
+    {"id": 7, "name": "Nicolás Herrera", "position": "GK", "shirt_number": 1},
+    {"id": 8, "name": "Agustín Castro", "position": "MF", "shirt_number": 14},
+    {"id": 9, "name": "Mateo Suárez", "position": "DF", "shirt_number": 3},
+    {"id": 10, "name": "Bruno Acosta", "position": "FW", "shirt_number": 11},
+    {"id": 11, "name": "Franco Medina", "position": "MF", "shirt_number": 16},
+    {"id": 12, "name": "Iván Sosa", "position": "DF", "shirt_number": 5}
+  ],
+  "sessions": [
+    {"id": 101, "date": "2026-09-15", "title": "Entrenamiento táctico", "type": "training", "duration_min": 75,
+      "player_sessions": [
+        {"player_id": 1, "minutes_played": 75, "total_distance_m": 5383, "high_speed_running_m": 447, "sprints": 17, "max_speed_kmh": 30.4, "accelerations": 30, "rpe": 5, "workload_au": 375},
+        {"player_id": 2, "minutes_played": 75, "total_distance_m": 6333, "high_speed_running_m": 608, "sprints": 12, "max_speed_kmh": 28.5, "accelerations": 35, "rpe": 6, "workload_au": 450},
+        {"player_id": 3, "minutes_played": 75, "total_distance_m": 4650, "high_speed_running_m": 425, "sprints": 8, "max_speed_kmh": 28.5, "accelerations": 22, "rpe": 5, "workload_au": 375},
+        {"player_id": 4, "minutes_played": 75, "total_distance_m": 4753, "high_speed_running_m": 344, "sprints": 8, "max_speed_kmh": 28.9, "accelerations": 23, "rpe": 5, "workload_au": 375},
+        {"player_id": 5, "minutes_played": 75, "total_distance_m": 6650, "high_speed_running_m": 475, "sprints": 13, "max_speed_kmh": 29.5, "accelerations": 37, "rpe": 6, "workload_au": 450},
+        {"player_id": 6, "minutes_played": 75, "total_distance_m": 5383, "high_speed_running_m": 392, "sprints": 17, "max_speed_kmh": 30.2, "accelerations": 30, "rpe": 5, "workload_au": 375},
+        {"player_id": 7, "minutes_played": 75, "total_distance_m": 3250, "high_speed_running_m": 65, "sprints": 1, "max_speed_kmh": 24.2, "accelerations": 10, "rpe": 3, "workload_au": 225},
+        {"player_id": 8, "minutes_played": 75, "total_distance_m": 6207, "high_speed_running_m": 640, "sprints": 12, "max_speed_kmh": 28.6, "accelerations": 34, "rpe": 6, "workload_au": 450},
+        {"player_id": 9, "minutes_played": 75, "total_distance_m": 4908, "high_speed_running_m": 387, "sprints": 8, "max_speed_kmh": 29.2, "accelerations": 24, "rpe": 5, "workload_au": 375},
+        {"player_id": 10, "minutes_played": 75, "total_distance_m": 5780, "high_speed_running_m": 624, "sprints": 19, "max_speed_kmh": 31.6, "accelerations": 32, "rpe": 6, "workload_au": 450},
+        {"player_id": 11, "minutes_played": 75, "total_distance_m": 6143, "high_speed_running_m": 527, "sprints": 12, "max_speed_kmh": 30.9, "accelerations": 34, "rpe": 5, "workload_au": 375},
+        {"player_id": 12, "minutes_played": 75, "total_distance_m": 4650, "high_speed_running_m": 334, "sprints": 8, "max_speed_kmh": 29.8, "accelerations": 22, "rpe": 5, "workload_au": 375}
+      ]
+    },
+    {"id": 102, "date": "2026-09-17", "title": "Entrenamiento de intensidad", "type": "training", "duration_min": 80,
+      "player_sessions": [
+        {"player_id": 1, "minutes_played": 80, "total_distance_m": 6649, "high_speed_running_m": 542, "sprints": 22, "max_speed_kmh": 30.3, "accelerations": 37, "rpe": 7, "workload_au": 560},
+        {"player_id": 2, "minutes_played": 80, "total_distance_m": 7566, "high_speed_running_m": 565, "sprints": 15, "max_speed_kmh": 29.1, "accelerations": 42, "rpe": 7, "workload_au": 560},
+        {"player_id": 3, "minutes_played": 80, "total_distance_m": 5511, "high_speed_running_m": 566, "sprints": 9, "max_speed_kmh": 28.0, "accelerations": 27, "rpe": 6, "workload_au": 480},
+        {"player_id": 4, "minutes_played": 80, "total_distance_m": 5621, "high_speed_running_m": 524, "sprints": 9, "max_speed_kmh": 29.2, "accelerations": 27, "rpe": 6, "workload_au": 480},
+        {"player_id": 5, "minutes_played": 80, "total_distance_m": 8444, "high_speed_running_m": 717, "sprints": 17, "max_speed_kmh": 29.8, "accelerations": 47, "rpe": 8, "workload_au": 640},
+        {"player_id": 6, "minutes_played": 80, "total_distance_m": 6347, "high_speed_running_m": 460, "sprints": 21, "max_speed_kmh": 30.1, "accelerations": 35, "rpe": 7, "workload_au": 560},
+        {"player_id": 7, "minutes_played": 80, "total_distance_m": 3467, "high_speed_running_m": 69, "sprints": 1, "max_speed_kmh": 23.7, "accelerations": 11, "rpe": 4, "workload_au": 320},
+        {"player_id": 8, "minutes_played": 80, "total_distance_m": 7093, "high_speed_running_m": 690, "sprints": 14, "max_speed_kmh": 29.5, "accelerations": 39, "rpe": 7, "workload_au": 560},
+        {"player_id": 9, "minutes_played": 80, "total_distance_m": 5511, "high_speed_running_m": 455, "sprints": 9, "max_speed_kmh": 29.1, "accelerations": 27, "rpe": 6, "workload_au": 480},
+        {"player_id": 10, "minutes_played": 80, "total_distance_m": 7253, "high_speed_running_m": 639, "sprints": 23, "max_speed_kmh": 30.8, "accelerations": 41, "rpe": 8, "workload_au": 640},
+        {"player_id": 11, "minutes_played": 80, "total_distance_m": 6756, "high_speed_running_m": 688, "sprints": 13, "max_speed_kmh": 30.2, "accelerations": 37, "rpe": 6, "workload_au": 480},
+        {"player_id": 12, "minutes_played": 80, "total_distance_m": 5401, "high_speed_running_m": 431, "sprints": 9, "max_speed_kmh": 29.0, "accelerations": 26, "rpe": 6, "workload_au": 480}
+      ]
+    },
+    {"id": 103, "date": "2026-09-19", "title": "Partido amistoso vs. Deportivo Ejemplo", "type": "match", "duration_min": 90,
+      "player_sessions": [
+        {"player_id": 1, "minutes_played": 90, "total_distance_m": 7344, "high_speed_running_m": 668, "sprints": 24, "max_speed_kmh": 32.4, "accelerations": 41, "rpe": 7, "workload_au": 630},
+        {"player_id": 2, "minutes_played": 90, "total_distance_m": 8512, "high_speed_running_m": 844, "sprints": 17, "max_speed_kmh": 29.1, "accelerations": 47, "rpe": 8, "workload_au": 720},
+        {"player_id": 3, "minutes_played": 90, "total_distance_m": 6076, "high_speed_running_m": 664, "sprints": 10, "max_speed_kmh": 27.9, "accelerations": 29, "rpe": 6, "workload_au": 540},
+        {"player_id": 4, "minutes_played": 90, "total_distance_m": 6200, "high_speed_running_m": 538, "sprints": 10, "max_speed_kmh": 29.5, "accelerations": 30, "rpe": 6, "workload_au": 540},
+        {"player_id": 5, "minutes_played": 90, "total_distance_m": 10488, "high_speed_running_m": 798, "sprints": 21, "max_speed_kmh": 29.6, "accelerations": 58, "rpe": 9, "workload_au": 810},
+        {"player_id": 6, "minutes_played": 90, "total_distance_m": 6936, "high_speed_running_m": 496, "sprints": 22, "max_speed_kmh": 31.8, "accelerations": 39, "rpe": 7, "workload_au": 630},
+        {"player_id": 7, "minutes_played": 90, "total_distance_m": 3900, "high_speed_running_m": 78, "sprints": 1, "max_speed_kmh": 25.0, "accelerations": 12, "rpe": 4, "workload_au": 360},
+        {"player_id": 8, "minutes_played": 62, "total_distance_m": 4974, "high_speed_running_m": 462, "sprints": 10, "max_speed_kmh": 30.7, "accelerations": 27, "rpe": 6, "workload_au": 372},
+        {"player_id": 9, "minutes_played": 90, "total_distance_m": 6262, "high_speed_running_m": 517, "sprints": 10, "max_speed_kmh": 29.4, "accelerations": 30, "rpe": null, "workload_au": null},
+        {"player_id": 10, "minutes_played": 90, "total_distance_m": 8840, "high_speed_running_m": 829, "sprints": 29, "max_speed_kmh": 31.6, "accelerations": 49, "rpe": 9, "workload_au": 810},
+        {"player_id": 11, "minutes_played": 28, "total_distance_m": 2128, "high_speed_running_m": 188, "sprints": 4, "max_speed_kmh": 30.6, "accelerations": 12, "rpe": 5, "workload_au": 140},
+        {"player_id": 12, "minutes_played": 90, "total_distance_m": 6014, "high_speed_running_m": 648, "sprints": 10, "max_speed_kmh": 28.8, "accelerations": 29, "rpe": 6, "workload_au": 540}
+      ]
+    }
+  ]
+}

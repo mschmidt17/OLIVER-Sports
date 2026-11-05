@@ -1,0 +1,11 @@
+node_modules/
+.env
+
+# Base SQLite local (se regenera con npm run seed)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Enunciado del challenge (no es parte de la solución)
+CHALLENGE.pdf
