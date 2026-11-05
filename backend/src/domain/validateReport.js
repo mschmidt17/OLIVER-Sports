@@ -1,0 +1,104 @@
+// Valida la respuesta del modelo contra los datos reales de la sesión.
+// Es la barrera que impide que el reporte invente jugadores o números.
+
+// La respuesta del modelo no sirve: la API responde 502 (Bad Gateway).
+export class InvalidReportError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'InvalidReportError';
+    this.status = 502;
+    this.expose = true;
+  }
+}
+
+function parseJson(rawText) {
+  try {
+    return JSON.parse(rawText);
+  } catch {
+    throw new InvalidReportError('El modelo devolvió un JSON inválido');
+  }
+}
+
+// Deja solo los elementos de jugadores permitidos y, si el modelo
+// repite un jugador, se queda con la primera aparición.
+function keepAllowedPlayers(items, allowedIds) {
+  const seen = new Set();
+  return items.filter((item) => {
+    if (!allowedIds.has(item.player_id) || seen.has(item.player_id)) return false;
+    seen.add(item.player_id);
+    return true;
+  });
+}
+
+const NUMBER_PATTERN = /\d+(?:[.,]\d+)*/g;
+
+// Un número escrito en el texto puede leerse de dos formas:
+// "10.488" como decimal (10.488) o con separador de miles (10488).
+// Se acepta si alguna de las dos lecturas existe en los datos.
+function readingsOf(numberText) {
+  return [
+    Number(numberText.replace(',', '.')),
+    Number(numberText.replace(/[.,]/g, '')),
+  ];
+}
+
+// Junta todos los números presentes en el contexto, incluidos los que
+// aparecen dentro de textos (por ejemplo, la fecha de la sesión).
+function collectNumbers(value, found = new Set()) {
+  if (typeof value === 'number') {
+    found.add(value);
+  } else if (typeof value === 'string') {
+    for (const match of value.match(NUMBER_PATTERN) ?? []) found.add(Number(match));
+  } else if (value !== null && typeof value === 'object') {
+    for (const item of Object.values(value)) collectNumbers(item, found);
+  }
+  return found;
+}
+
+// Lanza InvalidReportError si algún texto del reporte tiene un número
+// que no aparece en los datos de la sesión.
+function assertOnlyKnownNumbers(report, context) {
+  const knownNumbers = collectNumbers(context);
+  const texts = [
+    report.summary,
+    ...report.highlights.map((h) => h.reason),
+    ...report.alertComments.map((a) => a.comment),
+  ];
+
+  const unknownNumbers = texts
+    .flatMap((text) => text.match(NUMBER_PATTERN) ?? [])
+    .filter((match) => !readingsOf(match).some((n) => knownNumbers.has(n)));
+
+  if (unknownNumbers.length > 0) {
+    throw new InvalidReportError(
+      `El reporte menciona números que no están en los datos: ${unknownNumbers.join(', ')}`,
+    );
+  }
+}
+
+/**
+ * Valida el texto crudo del modelo contra el contexto de la sesión.
+ * `schema` es el esquema Zod del prompt que generó la respuesta.
+ * - JSON inválido o con formato incorrecto  -> InvalidReportError (502).
+ * - Un número que no existe en los datos     -> InvalidReportError (502).
+ * - player_id que no está en la sesión        -> se descarta ese elemento.
+ * - Comentario de alerta para un jugador sin alerta calculada -> se descarta.
+ */
+export function validateReport(rawText, context, schema) {
+  const result = schema.safeParse(parseJson(rawText));
+  if (!result.success) {
+    throw new InvalidReportError('La respuesta del modelo no tiene el formato esperado');
+  }
+
+  const sessionPlayerIds = new Set(context.players.map((p) => p.player_id));
+  const alertedPlayerIds = new Set(context.alerts.map((a) => a.player_id));
+
+  const report = {
+    summary: result.data.summary,
+    highlights: keepAllowedPlayers(result.data.highlights, sessionPlayerIds),
+    alertComments: keepAllowedPlayers(result.data.alerts, alertedPlayerIds),
+  };
+
+  assertOnlyKnownNumbers(report, context);
+  return report;
+}

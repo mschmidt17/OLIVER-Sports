@@ -24,12 +24,33 @@ const findSessionStmt = db.prepare(
   'SELECT id, date, title, type, duration_min FROM sessions WHERE id = ?'
 );
 
+// Los umbrales son del equipo; se llega a ellos a través de la sesión.
+const sessionThresholdsStmt = db.prepare(`
+  SELECT t.metric, t.warning, t.critical
+  FROM thresholds t
+  JOIN sessions s ON s.team_id = t.team_id
+  WHERE s.id = ?
+`);
+
 export function listSessions() {
   return listSessionsStmt.all();
 }
 
 function findSession(sessionId) {
   return findSessionStmt.get(sessionId);
+}
+
+/**
+ * Umbrales de la sesión con la misma forma que el JSON original,
+ * que es la que usa domain/alerts.js:
+ *   { workload_au: { warning: 600, critical: 750 }, rpe: { warning: 8, critical: null } }
+ */
+export function getSessionThresholds(sessionId) {
+  const thresholds = {};
+  for (const row of sessionThresholdsStmt.all(sessionId)) {
+    thresholds[row.metric] = { warning: row.warning, critical: row.critical };
+  }
+  return thresholds;
 }
 
 function buildOrderBy(orderBy, order) {
