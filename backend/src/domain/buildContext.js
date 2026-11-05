@@ -1,0 +1,86 @@
+import { detectAlerts } from './alerts.js';
+
+// Por debajo de este porcentaje de la sesión, el jugador "jugó poco".
+const LOW_MINUTES_RATIO = 0.5;
+
+const RAW_METRICS = [
+  'total_distance_m',
+  'high_speed_running_m',
+  'sprints',
+  'max_speed_kmh',
+  'accelerations',
+  'rpe',
+  'workload_au',
+];
+
+// Métricas de volumen que se normalizan por minuto jugado.
+// Así un suplente con 28 minutos se compara de forma justa con quien jugó 90.
+const PER_MINUTE_METRICS = {
+  total_distance_m: 'distance_m_per_min',
+  high_speed_running_m: 'hsr_m_per_min',
+  sprints: 'sprints_per_min',
+  accelerations: 'accelerations_per_min',
+};
+
+function round2(value) {
+  return Math.round(value * 100) / 100;
+}
+
+function pick(source, keys) {
+  return Object.fromEntries(keys.map((key) => [key, source[key]]));
+}
+
+function perMinuteMetrics(player) {
+  const result = {};
+  for (const [metric, name] of Object.entries(PER_MINUTE_METRICS)) {
+    const value = player[metric];
+    // Sin minutos o sin dato no hay cociente posible: null, nunca 0.
+    result[name] = player.minutes_played > 0 && value != null
+      ? round2(value / player.minutes_played)
+      : null;
+  }
+  return result;
+}
+
+// Se lo decimos explícito al modelo para que no interprete un null como 0.
+function findMissingData(players) {
+  const missing = [];
+  for (const player of players) {
+    for (const metric of RAW_METRICS) {
+      if (player[metric] == null) missing.push({ player_id: player.player_id, metric });
+    }
+  }
+  return missing;
+}
+
+function buildPlayerContext(player, durationMin) {
+  return {
+    player_id: player.player_id,
+    position: player.position,
+    minutes_played: player.minutes_played,
+    low_minutes: player.minutes_played < durationMin * LOW_MINUTES_RATIO,
+    metrics: pick(player, RAW_METRICS),
+    per_minute: perMinuteMetrics(player),
+  };
+}
+
+/**
+ * Arma el contexto que se le envía al modelo.
+ * No incluye nombres: el modelo trabaja con player_id y el backend
+ * completa nombres y números después, desde la base.
+ */
+export function buildContext({ session, players, thresholds }) {
+  return {
+    session: {
+      id: session.id,
+      date: session.date,
+      title: session.title,
+      type: session.type,
+      duration_min: session.duration_min,
+    },
+    thresholds,
+    players: players.map((p) => buildPlayerContext(p, session.duration_min)),
+    alerts: detectAlerts(players, thresholds),
+    missing_data: findMissingData(players),
+  };
+}
