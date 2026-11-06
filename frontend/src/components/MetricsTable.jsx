@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { METRICS, LEVELS, indexAlerts, findAlert, formatValue } from '../metrics.js';
+import { METRICS, LEVELS, indexAlerts, cellMark, formatValue } from '../metrics.js';
 
 const COLUMNS = [
   { key: 'shirt_number', label: '#' },
@@ -28,21 +28,21 @@ function sortPlayers(players, { key, direction }) {
   });
 }
 
-function MetricCell({ value, alert }) {
-  if (value == null) {
+// Dibuja la celda según su marca (ver cellMark en metrics.js).
+function MetricCell({ value, mark }) {
+  if (mark.missing) {
     return <td className="num no-data">sin dato</td>;
   }
-  if (!alert) {
-    return <td className="num">{formatValue(value)}</td>;
-  }
 
-  const level = LEVELS[alert.level];
+  const level = mark.alert && LEVELS[mark.alert.level];
   return (
     <td
-      className={`num cell-${alert.level}`}
-      title={`${level.label}: alcanzó el umbral de ${formatValue(alert.threshold)}`}
+      className={level ? `num cell-${mark.alert.level}` : 'num'}
+      title={level ? `${level.label}: alcanzó el umbral de ${formatValue(mark.alert.threshold)}` : undefined}
     >
-      <span className="level-icon" aria-label={level.label}>{level.icon}</span> {formatValue(value)}
+      {mark.lowMinutes && <span className="cell-note">pocos min.</span>}
+      {level && <span className="level-icon" aria-label={level.label}>{level.icon} </span>}
+      {formatValue(value)}
     </td>
   );
 }
@@ -74,13 +74,10 @@ export default function MetricsTable({ players, alerts }) {
             {COLUMNS.map((column) => {
               const sortInfo = sort.key === column.key ? SORT_DIRECTIONS[sort.direction] : null;
               return (
-                <th
-                  key={column.key}
-                  aria-sort={sortInfo?.ariaSort ?? 'none'}
-                >
+                <th key={column.key} aria-sort={sortInfo?.ariaSort ?? 'none'}>
                   <button type="button" onClick={() => handleSort(column.key)}>
                     {column.label}
-                    {column.unit && <span className="unit"> {column.unit}</span>}
+                    {column.unit && <span className="unit"> ({column.unit})</span>}
                     <span className="sort-arrow">{sortInfo?.arrow}</span>
                   </button>
                 </th>
@@ -92,13 +89,13 @@ export default function MetricsTable({ players, alerts }) {
           {sortPlayers(players, sort).map((player) => (
             <tr key={player.player_id}>
               <td className="num">{player.shirt_number}</td>
-              <td>{player.name}</td>
-              <td>{player.position}</td>
+              <td className="player-name">{player.name}</td>
+              <td><span className="position-tag">{player.position}</span></td>
               {METRICS.map((metric) => (
                 <MetricCell
                   key={metric.key}
                   value={player[metric.key]}
-                  alert={findAlert(alertIndex, player.player_id, metric.key)}
+                  mark={cellMark(player, metric.key, alertIndex)}
                 />
               ))}
             </tr>

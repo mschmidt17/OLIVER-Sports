@@ -13,73 +13,96 @@ function formatDateTime(isoDate) {
 }
 
 function PlayerName({ player }) {
-  return <strong>#{player.shirt_number} {player.name}</strong>;
+  return (
+    <span className="report-player">
+      <strong>#{player.shirt_number} {player.name}</strong>
+      <span className="position-tag">{player.position}</span>
+    </span>
+  );
 }
 
 function AlertItem({ item }) {
   const level = LEVELS[item.level];
   return (
     <span className={`badge badge-${item.level}`}>
-      {level.icon} {metricLabel(item.metric)}: {formatValue(item.value)} ({level.label})
+      {level.icon} {metricLabel(item.metric)} {formatValue(item.value)} · {level.label}
     </span>
   );
 }
 
-function ReportContent({ report, onRegenerate }) {
+// Una sección del informe: etiqueta en mayúsculas y su contenido.
+function ReportSection({ title, children }) {
   return (
-    <div className="report">
-      <p>{report.summary}</p>
+    <section className="report-section">
+      <h3 className="section-label">{title}</h3>
+      {children}
+    </section>
+  );
+}
 
-      <h3>Jugadores destacados</h3>
-      {report.highlights.length === 0 ? (
-        <p className="empty">El modelo no devolvió destacados válidos.</p>
-      ) : (
-        <ul>
-          {report.highlights.map((h) => (
-            <li key={h.player_id}>
-              <PlayerName player={h} />
-              {h.low_minutes && <span className="muted"> (jugó pocos minutos)</span>}: {h.reason}
-            </li>
-          ))}
-        </ul>
-      )}
+function ReportContent({ report, onRegenerate }) {
+  // Un jugador puede tener varias métricas sin dato: se agrupan en una sola línea.
+  const missingByPlayer = Map.groupBy(report.missing_data, (m) => m.player_id);
 
-      <h3>Alertas</h3>
-      {report.alerts.length === 0 ? (
-        <p className="empty">Ningún jugador superó los umbrales en esta sesión.</p>
-      ) : (
-        <ul>
-          {report.alerts.map((a) => (
-            <li key={a.player_id}>
-              <PlayerName player={a} />{' '}
-              {a.items.map((item) => <AlertItem key={item.metric} item={item} />)}
-              {a.comment && <div>{a.comment}</div>}
-            </li>
-          ))}
-        </ul>
-      )}
+  return (
+    <article className="report">
+      <p className="report-summary">{report.summary}</p>
 
-      {report.missing_data.length > 0 && (
-        <>
-          <h3>Datos faltantes</h3>
-          <ul>
-            {report.missing_data.map((m) => (
-              <li key={`${m.player_id}-${m.metric}`}>
-                <PlayerName player={m} />: {metricLabel(m.metric)} sin dato
+      <ReportSection title="Destacados">
+        {report.highlights.length === 0 ? (
+          <p className="empty">El modelo no devolvió destacados válidos.</p>
+        ) : (
+          <ul className="report-list">
+            {report.highlights.map((h) => (
+              <li key={h.player_id}>
+                <PlayerName player={h} />
+                {h.low_minutes && <span className="cell-note">pocos min.</span>}
+                <p>{h.reason}</p>
               </li>
             ))}
           </ul>
-        </>
+        )}
+      </ReportSection>
+
+      <ReportSection title="Alertas">
+        {report.alerts.length === 0 ? (
+          <p className="empty">Ningún jugador alcanzó los umbrales en esta sesión.</p>
+        ) : (
+          <ul className="report-list">
+            {report.alerts.map((a) => (
+              <li key={a.player_id}>
+                <PlayerName player={a} />
+                <div className="badges">
+                  {a.items.map((item) => <AlertItem key={item.metric} item={item} />)}
+                </div>
+                {a.comment && <p>{a.comment}</p>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </ReportSection>
+
+      {missingByPlayer.size > 0 && (
+        <ReportSection title="Sin dato">
+          <ul className="report-list">
+            {[...missingByPlayer].map(([playerId, items]) => (
+              <li key={playerId}>
+                <PlayerName player={items[0]} />
+                <p>{items.map((m) => metricLabel(m.metric)).join(', ')}</p>
+              </li>
+            ))}
+          </ul>
+        </ReportSection>
       )}
 
-      <p className="report-footer muted">
+      <footer className="report-footer">
         <span>
-          {report.cached ? 'Reporte guardado' : 'Reporte generado'} el {formatDateTime(report.created_at)}
+          {report.cached ? 'Guardado' : 'Generado'} el {formatDateTime(report.created_at)}
           {' · '}{report.model} · prompt {report.prompt_version}
         </span>
-        <button type="button" onClick={onRegenerate}>Regenerar</button>
-      </p>
-    </div>
+        <button type="button" className="secondary" onClick={onRegenerate}>Regenerar</button>
+      </footer>
+    </article>
   );
 }
 
@@ -134,7 +157,8 @@ export default function ReportPanel({ sessionId }) {
 
       {status === 'idle' && (
         <p className="empty">
-          Todavía no hay un reporte para esta sesión. Elegí idioma y destinatario, y tocá "Generar reporte".
+          Todavía no hay un reporte para esta sesión. Elegí idioma y destinatario,
+          y tocá "Generar reporte".
         </p>
       )}
       {status === 'loading' && (
