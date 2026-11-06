@@ -1,5 +1,6 @@
 import db from '../db/connection.js';
 import { detectAlerts } from '../domain/alerts.js';
+import { isLowMinutes } from '../domain/buildContext.js';
 
 // Lista blanca de columnas por las que se puede ordenar.
 // ORDER BY no admite parámetros (?), así que la columna se interpola en el SQL:
@@ -69,9 +70,9 @@ function buildOrderBy(orderBy, order) {
 }
 
 /**
- * Métricas de los jugadores de una sesión, con los umbrales del equipo y
- * las alertas ya calculadas (domain/alerts.js). Así el frontend solo pinta:
- * la regla de alertas vive en un único lugar.
+ * Métricas de los jugadores de una sesión, con los umbrales del equipo,
+ * las alertas ya calculadas (domain/alerts.js) y low_minutes por jugador.
+ * Así el frontend solo pinta: las reglas de negocio viven en domain/.
  * Devuelve null si la sesión no existe (la ruta lo traduce a 404).
  */
 export function getSessionMetrics(sessionId, { playerId, orderBy, order } = {}) {
@@ -91,7 +92,10 @@ export function getSessionMetrics(sessionId, { playerId, orderBy, order } = {}) 
     ${buildOrderBy(orderBy, order)}
   `;
 
-  const players = db.prepare(sql).all({ sessionId, playerId });
+  const players = db
+    .prepare(sql)
+    .all({ sessionId, playerId })
+    .map((p) => ({ ...p, low_minutes: isLowMinutes(p.minutes_played, session.duration_min) }));
   const thresholds = getSessionThresholds(sessionId);
 
   return { session, thresholds, players, alerts: detectAlerts(players, thresholds) };

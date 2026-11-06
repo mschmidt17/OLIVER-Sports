@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import data from '../../session_data.json' with { type: 'json' };
-import { buildContext } from './buildContext.js';
+import { buildContext, isLowMinutes } from './buildContext.js';
 import { detectAlerts } from './alerts.js';
 
 // Arma la misma entrada que va a recibir buildContext desde el service:
@@ -81,5 +81,14 @@ describe('buildContext', () => {
     });
     expect(context.players[0].per_minute.distance_m_per_min).toBeNull();
     expect(context.players[0].low_minutes).toBe(true);
+  });
+});
+
+describe('isLowMinutes', () => {
+  it('menos del 50% de la sesión es pocos minutos; exactamente el 50% no', () => {
+    expect(isLowMinutes(44, 90)).toBe(true);
+    expect(isLowMinutes(45, 90)).toBe(false);
+    expect(isLowMinutes(90, 90)).toBe(false);
+    expect(isLowMinutes(null, 90)).toBe(false); // sin dato no es "pocos minutos"
   });
 });

@@ -3,6 +3,12 @@ import { detectAlerts } from './alerts.js';
 // Por debajo de este porcentaje de la sesión, el jugador "jugó poco".
 const LOW_MINUTES_RATIO = 0.5;
 
+// Única definición de la regla: la usan el contexto para la IA y la API de métricas.
+// Sin dato de minutos no se puede afirmar que jugó poco (en JS, null < 45 es true).
+export function isLowMinutes(minutesPlayed, durationMin) {
+  return minutesPlayed != null && minutesPlayed < durationMin * LOW_MINUTES_RATIO;
+}
+
 const RAW_METRICS = [
   'total_distance_m',
   'high_speed_running_m',
@@ -58,7 +64,7 @@ function buildPlayerContext(player, durationMin) {
     player_id: player.player_id,
     position: player.position,
     minutes_played: player.minutes_played,
-    low_minutes: player.minutes_played < durationMin * LOW_MINUTES_RATIO,
+    low_minutes: isLowMinutes(player.minutes_played, durationMin),
     metrics: pick(player, RAW_METRICS),
     per_minute: perMinuteMetrics(player),
   };
