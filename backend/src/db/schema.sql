@@ -1,5 +1,6 @@
 -- Se borra todo antes de crear: así el seed se puede correr varias veces.
 -- Orden inverso a las dependencias (primero las tablas hijas).
+DROP TABLE IF EXISTS reports;
 DROP TABLE IF EXISTS player_sessions;
 DROP TABLE IF EXISTS thresholds;
 DROP TABLE IF EXISTS sessions;
@@ -52,4 +53,18 @@ CREATE TABLE thresholds (
   warning  REAL NOT NULL,
   critical REAL,
   PRIMARY KEY (team_id, metric)
+);
+
+-- Caché de reportes: guarda solo la respuesta del modelo, que se valida en cada uso;
+-- nombres y métricas se completan desde la base en cada pedido.
+-- Prompt y modelo son parte de la clave: si cambian, no se sirven reportes viejos.
+CREATE TABLE reports (
+  session_id     INTEGER NOT NULL REFERENCES sessions(id),
+  language       TEXT NOT NULL,
+  audience       TEXT NOT NULL,
+  prompt_version TEXT NOT NULL,
+  model          TEXT NOT NULL,
+  raw_response   TEXT NOT NULL,  -- respuesta del modelo tal cual (JSON)
+  created_at     TEXT NOT NULL,  -- formato ISO 8601
+  PRIMARY KEY (session_id, language, audience, prompt_version, model)
 );

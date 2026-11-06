@@ -63,6 +63,7 @@ select, button {
   border-radius: 6px;
   background: #fff;
   color: var(--text-primary);
+  cursor: pointer;
 }
 
 .controls {
@@ -77,7 +78,6 @@ button.primary {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
-  cursor: pointer;
 }
 
 button.primary:disabled {
@@ -128,7 +128,6 @@ th button {
   padding: 0;
   background: none;
   font-weight: 600;
-  cursor: pointer;
 }
 
 .unit, .sort-arrow {
@@ -192,3 +191,10 @@ td.cell-critical .level-icon { color: var(--critical); }
 
 .badge-warning { background: var(--warning-bg); color: #6b4a00; }
 .badge-critical { background: var(--critical-bg); color: #8a1f1f; }
+
+.report-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}

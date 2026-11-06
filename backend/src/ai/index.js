@@ -4,7 +4,7 @@ import * as geminiClient from './geminiClient.js';
 // lo que es común a cualquier proveedor: timeout, un reintento ante errores
 // temporales (rate limit o modelo saturado) y errores con un código HTTP claro.
 // Para sumar otro proveedor alcanza con un cliente con la misma forma
-// (isConfigured, isTemporaryError, generateJson) y agregarlo a esta lista.
+// (isConfigured, modelName, isTemporaryError, generateJson) y agregarlo a esta lista.
 const PROVIDERS = {
   gemini: geminiClient,
 };
@@ -26,8 +26,22 @@ export class AiError extends Error {
   }
 }
 
+function providerName() {
+  return process.env.AI_PROVIDER || 'gemini';
+}
+
+/**
+ * Identifica proveedor y modelo activos, por ejemplo "gemini/gemini-3.1-flash-lite".
+ * Se usa en la clave de la caché: un cambio de modelo no sirve reportes del anterior.
+ */
+export function currentModelId() {
+  const name = providerName();
+  const provider = PROVIDERS[name];
+  return provider ? `${name}/${provider.modelName()}` : name;
+}
+
 function getProvider() {
-  const name = process.env.AI_PROVIDER || 'gemini';
+  const name = providerName();
   const provider = PROVIDERS[name];
 
   if (!provider) {

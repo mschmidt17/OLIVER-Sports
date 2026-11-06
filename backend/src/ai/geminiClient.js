@@ -22,6 +22,10 @@ export function isConfigured() {
   return Boolean(process.env.GEMINI_API_KEY);
 }
 
+export function modelName() {
+  return process.env.GEMINI_MODEL || DEFAULT_MODEL;
+}
+
 // Errores temporales del proveedor, que vale la pena reintentar:
 // 429 = rate limit, 503 = modelo saturado ("high demand").
 // El SDK lanza ApiError con el código HTTP en `status`.
@@ -35,7 +39,7 @@ export function isTemporaryError(error) {
  */
 export async function generateJson({ systemInstruction, userPrompt, responseSchema, signal }) {
   const response = await getClient().models.generateContent({
-    model: process.env.GEMINI_MODEL || DEFAULT_MODEL,
+    model: modelName(),
     contents: userPrompt,
     config: {
       systemInstruction,

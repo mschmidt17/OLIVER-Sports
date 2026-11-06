@@ -26,9 +26,11 @@ const metricsQuerySchema = z.object({
 });
 
 // Si no se envían, el reporte sale en español y para el cuerpo técnico.
+// refresh = true ignora la caché y genera un reporte nuevo.
 const reportBodySchema = z.object({
   language: z.enum(LANGUAGES, { error: `debe ser uno de: ${LANGUAGES.join(', ')}` }).default('es'),
   audience: z.enum(AUDIENCES, { error: `debe ser uno de: ${AUDIENCES.join(', ')}` }).default('coach'),
+  refresh: z.boolean({ error: 'debe ser true o false' }).default(false),
 });
 
 // Responde 400 con los errores de Zod en texto legible: "order: debe ser asc o desc".

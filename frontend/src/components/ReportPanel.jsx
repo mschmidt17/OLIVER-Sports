@@ -2,6 +2,16 @@ import { useState } from 'react';
 import { generateReport } from '../api/client.js';
 import { LEVELS, metricLabel, formatValue } from '../metrics.js';
 
+// Fecha y hora en formato de 24 h ("5/11/26, 16:40"), sin depender
+// de cómo el navegador formatee por defecto.
+function formatDateTime(isoDate) {
+  return new Date(isoDate).toLocaleString('es-AR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    hourCycle: 'h23',
+  });
+}
+
 function PlayerName({ player }) {
   return <strong>#{player.shirt_number} {player.name}</strong>;
 }
@@ -15,7 +25,7 @@ function AlertItem({ item }) {
   );
 }
 
-function ReportContent({ report }) {
+function ReportContent({ report, onRegenerate }) {
   return (
     <div className="report">
       <p>{report.summary}</p>
@@ -62,7 +72,13 @@ function ReportContent({ report }) {
         </>
       )}
 
-      <p className="muted">Generado con IA · prompt {report.prompt_version}</p>
+      <p className="report-footer muted">
+        <span>
+          {report.cached ? 'Reporte guardado' : 'Reporte generado'} el {formatDateTime(report.created_at)}
+          {' · '}{report.model} · prompt {report.prompt_version}
+        </span>
+        <button type="button" onClick={onRegenerate}>Regenerar</button>
+      </p>
     </div>
   );
 }
@@ -76,10 +92,12 @@ export default function ReportPanel({ sessionId }) {
   const [report, setReport] = useState(null);
   const [error, setError] = useState(null);
 
-  async function handleGenerate() {
+  // Si ya hay un reporte guardado para estos parámetros, el backend lo
+  // devuelve sin llamar a la IA. refresh = true fuerza uno nuevo.
+  async function handleGenerate(refresh = false) {
     setStatus('loading');
     try {
-      setReport(await generateReport(sessionId, { language, audience }));
+      setReport(await generateReport(sessionId, { language, audience, refresh }));
       setStatus('done');
     } catch (err) {
       setError(err.message);
@@ -104,7 +122,12 @@ export default function ReportPanel({ sessionId }) {
             <option value="player">Jugadores</option>
           </select>
         </label>
-        <button type="button" className="primary" onClick={handleGenerate} disabled={status === 'loading'}>
+        <button
+          type="button"
+          className="primary"
+          onClick={() => handleGenerate()}
+          disabled={status === 'loading'}
+        >
           {status === 'loading' ? 'Generando…' : 'Generar reporte'}
         </button>
       </div>
@@ -120,7 +143,9 @@ export default function ReportPanel({ sessionId }) {
       {status === 'error' && (
         <p className="error" role="alert">No se pudo generar el reporte: {error}</p>
       )}
-      {status === 'done' && <ReportContent report={report} />}
+      {status === 'done' && (
+        <ReportContent report={report} onRegenerate={() => handleGenerate(true)} />
+      )}
     </div>
   );
 }

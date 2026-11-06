@@ -31,10 +31,10 @@ export function getSessionMetrics(sessionId) {
   return request(`/sessions/${sessionId}/metrics`);
 }
 
-export function generateReport(sessionId, { language, audience }) {
+export function generateReport(sessionId, { language, audience, refresh }) {
   return request(`/sessions/${sessionId}/report`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ language, audience }),
+    body: JSON.stringify({ language, audience, refresh }),
   });
 }

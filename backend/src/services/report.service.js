@@ -1,22 +1,66 @@
+import db from '../db/connection.js';
 import { getSessionMetrics } from './metrics.service.js';
 import { buildContext } from '../domain/buildContext.js';
-import { validateReport } from '../domain/validateReport.js';
-import { generateJson } from '../ai/index.js';
+import { validateReport, InvalidReportError } from '../domain/validateReport.js';
+import { generateJson, currentModelId } from '../ai/index.js';
 import {
   buildSessionReportPrompt,
   reportSchema,
   PROMPT_VERSION,
 } from '../prompts/sessionReport.v1.js';
 
+// Caché en la tabla reports. Clave: sesión + idioma + destinatario + prompt + modelo.
+// Se guarda la respuesta cruda del modelo y se valida en cada uso.
+const findCachedStmt = db.prepare(`
+  SELECT raw_response, created_at FROM reports
+  WHERE session_id = @sessionId AND language = @language AND audience = @audience
+    AND prompt_version = @promptVersion AND model = @model
+`);
+
+// REPLACE: al regenerar, la fila anterior se reemplaza en la misma operación.
+const saveStmt = db.prepare(`
+  INSERT OR REPLACE INTO reports
+    (session_id, language, audience, prompt_version, model, raw_response, created_at)
+  VALUES (@sessionId, @language, @audience, @promptVersion, @model, @rawResponse, @createdAt)
+`);
+
+// Reporte guardado, validado contra los datos ACTUALES de la sesión con el
+// mismo validateReport que una respuesta nueva. Si ya no coincide (por ejemplo,
+// menciona un número que cambió), se descarta y se genera otro.
+function findValidCachedOutput(key, context) {
+  const row = findCachedStmt.get(key);
+  if (!row) return null;
+
+  try {
+    const aiOutput = validateReport(row.raw_response, context, reportSchema);
+    return { aiOutput, createdAt: row.created_at, cached: true };
+  } catch (error) {
+    if (error instanceof InvalidReportError) return null;
+    throw error;
+  }
+}
+
+// Pide el reporte al modelo, lo valida y recién ahí lo guarda:
+// una respuesta inválida nunca queda en caché.
+async function generateAndSaveOutput(key, context) {
+  const { language, audience } = key;
+  const rawResponse = await generateJson(buildSessionReportPrompt(context, { language, audience }));
+  const aiOutput = validateReport(rawResponse, context, reportSchema);
+  const createdAt = new Date().toISOString();
+
+  saveStmt.run({ ...key, rawResponse, createdAt });
+  return { aiOutput, createdAt, cached: false };
+}
+
 /**
- * Genera el reporte de una sesión con IA.
- * `options` = { language, audience }.
+ * Devuelve el reporte de una sesión. Si ya hay uno guardado con los mismos
+ * parámetros lo reutiliza sin llamar a la IA, salvo que refresh sea true.
  * Devuelve null si la sesión no existe (la ruta lo traduce a 404).
  *
- * Flujo: datos de la base -> contexto -> modelo -> validación -> datos de la base.
- * La IA solo aporta textos; jugadores, métricas y alertas salen siempre de la base.
+ * La caché guarda solo la respuesta del modelo. Jugadores, métricas y alertas
+ * se completan siempre desde la base, también cuando el reporte viene de la caché.
  */
-export async function generateSessionReport(sessionId, options) {
+export async function generateSessionReport(sessionId, { language, audience, refresh }) {
   const data = getSessionMetrics(sessionId);
   if (!data) return null;
 
@@ -26,10 +70,24 @@ export async function generateSessionReport(sessionId, options) {
     thresholds: data.thresholds,
   });
 
-  const rawText = await generateJson(buildSessionReportPrompt(context, options));
-  const report = validateReport(rawText, context, reportSchema);
+  const key = {
+    sessionId,
+    language,
+    audience,
+    promptVersion: PROMPT_VERSION,
+    model: currentModelId(),
+  };
 
-  return completeReport(report, context, data);
+  const cached = refresh ? null : findValidCachedOutput(key, context);
+  const result = cached ?? (await generateAndSaveOutput(key, context));
+
+  return {
+    ...completeReport(result.aiOutput, context, data),
+    prompt_version: key.promptVersion,
+    model: key.model,
+    cached: result.cached,
+    created_at: result.createdAt,
+  };
 }
 
 /**
@@ -65,7 +123,6 @@ function completeReport(report, context, data) {
 
   return {
     session: data.session,
-    prompt_version: PROMPT_VERSION,
     summary: report.summary,
     highlights: report.highlights.map(toHighlight),
     alerts: [...alertsByPlayer].map(toAlert),
