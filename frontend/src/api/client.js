@@ -9,13 +9,15 @@ async function request(path, options) {
   try {
     response = await fetch(BASE_URL + path, options);
   } catch {
-    throw new Error('No se pudo conectar con el servidor. ¿Está corriendo el backend?');
+    throw new Error('No se pudo conectar con el backend. ¿Está corriendo?');
   }
 
   // Si la respuesta no es JSON, body queda en null.
   const body = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(body?.error ?? `Error ${response.status} del servidor`);
+    // El backend siempre responde los errores con { error }. Si no viene, no contestó
+    // el backend sino el proxy de Vite (por ejemplo, porque el backend está apagado).
+    throw new Error(body?.error ?? 'No se pudo conectar con el backend. ¿Está corriendo?');
   }
   if (body === null) {
     throw new Error('El servidor devolvió una respuesta que no es JSON');
