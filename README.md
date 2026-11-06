@@ -266,6 +266,12 @@ por destinatario, y el esquema de respuesta. Si cambia, se crea `v2` en vez de e
 - **Orden de la tabla en el navegador:** son 12 filas y así no hay una request por clic.
   El backend igual soporta `order_by` porque lo pide la API.
 - **Proxy de Vite en vez de CORS:** el navegador ve un solo origen y no hace falta otra librería.
+- **Identidad visual inspirada en OLIVER:** tipografía Rubik y la paleta de su sitio
+  (navy, azul y rosa), pero con colores planos: un sitio de marketing busca impacto y una
+  herramienta de trabajo busca legibilidad. El navy queda en el marco y los datos van sobre
+  fondo claro. El color se reserva para el significado: el rosa nunca aparece en los datos,
+  para que no se confunda con una alerta, y los colores de alerta están validados por
+  contraste y daltonismo.
 - **Puerto 4000:** el 3000 suele estar ocupado por otras apps de desarrollo.
 - **Tests unitarios solo de `domain/`:** es donde están las reglas de negocio. Los
   endpoints los probé manualmente y con scripts.
@@ -279,6 +285,9 @@ por destinatario, y el esquema de respuesta. Si cambia, se crea `v2` en vez de e
 - **Evitar llamadas duplicadas al modelo** si llegan dos pedidos iguales al mismo tiempo.
 - **Streaming con SSE** para mostrar el reporte a medida que se genera.
 - **Reporte de evolución** de un jugador a lo largo de las sesiones.
+- **Marcar "sin dato" dentro del gráfico,** en el lugar vacío del jugador. Hoy se explica en
+  una nota debajo del gráfico; marcarlo en el lugar requiere dibujar un elemento SVG propio,
+  porque Recharts no dibuja nada para un valor `null`.
 - **Validación más fina de los textos:** detectar afirmaciones como "la mayor distancia" y
   verificarlas contra los datos.
 
