@@ -15,6 +15,8 @@
   /* Superficies y texto */
   --page: #f4f5f6;
   --surface: #ffffff;
+  --surface-muted: #eef0f1;  /* etiquetas (posición, "pocos min.") */
+  --surface-hover: #f7f9fa;  /* fila bajo el mouse */
   --line: #e3e6e8;
   --line-strong: #c5ccd0;
   --text-primary: #0f1c22;
@@ -129,9 +131,8 @@ h1, h2, h3, p {
   background: var(--navy);
 }
 
-.topbar .field {
-  flex-direction: row;
-  align-items: center;
+/* Mismo campo en línea que el resto (.field-inline), con los colores del navy. */
+.topbar .field-inline {
   gap: 14px;
   font-size: 14px;
   color: var(--on-navy-muted);
@@ -368,6 +369,26 @@ button.secondary {
 
 button.secondary:hover { border-color: var(--blue); }
 
+/* Etiqueta y control en la misma línea (p. ej. "Métrica [Distancia]"). */
+.field-inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+/* Título del panel a la izquierda y sus controles a la derecha. */
+.panel-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.panel-header .section-title { margin-bottom: 0; }
+
 .controls {
   display: flex;
   flex-wrap: wrap;
@@ -410,51 +431,60 @@ table {
   font-variant-numeric: tabular-nums;
 }
 
+/* Densidad compacta: la tabla comparte ancho con el reporte. */
 th, td {
-  padding: 9px var(--cell-padding-x);
-  border-bottom: 1px solid var(--line);
+  padding: 7px var(--cell-padding-x);
   text-align: left;
   white-space: nowrap;
 }
 
+td {
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+
+th.num, td.num { text-align: right; }
+
+/* Encabezado como franja gris, fija al hacer scroll vertical. */
 thead th {
   position: sticky;
   top: 0;
   z-index: 2;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line-strong);
+  background: var(--page);
 }
-
-tbody tr:hover td { background: #f7f9fa; }
 
 /* Número y nombre fijos al desplazarse horizontalmente. La segunda columna
    arranca donde termina la primera: su ancho + el padding a ambos lados. */
 table {
-  --number-col-width: 32px;
-  --cell-padding-x: 12px;
+  --number-col-width: 28px;
+  --cell-padding-x: 10px;
 }
 
 th:nth-child(1), td:nth-child(1) {
   position: sticky;
   left: 0;
   width: var(--number-col-width);
-  background: var(--surface);
 }
 
 th:nth-child(2), td:nth-child(2) {
   position: sticky;
   left: calc(var(--number-col-width) + 2 * var(--cell-padding-x));
-  background: var(--surface);
   border-right: 1px solid var(--line);
 }
 
+/* Las celdas fijas necesitan fondo propio para tapar lo que pasa por debajo. */
+td:nth-child(1), td:nth-child(2) { background: var(--surface); }
+
 thead th:nth-child(1), thead th:nth-child(2) { z-index: 3; }
+
+/* El hover no pisa el fondo de las celdas con alerta. */
+tbody tr:hover td:not(.cell-warning, .cell-critical) { background: var(--surface-hover); }
 
 th button {
   border: none;
   padding: 0;
   background: none;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -475,7 +505,6 @@ th[aria-sort='descending'] button { color: var(--text-primary); }
 }
 
 td.player-name { font-weight: 500; }
-td.num { text-align: right; }
 td.no-data { color: var(--text-secondary); font-style: italic; }
 
 td.cell-warning { background: var(--warning-bg); color: var(--warning-text); font-weight: 600; }
@@ -483,21 +512,19 @@ td.cell-critical { background: var(--critical-bg); color: var(--critical-text); 
 td.cell-warning .level-icon { color: var(--warning); }
 td.cell-critical .level-icon { color: var(--critical); }
 
-.position-tag {
+/* Etiquetas chicas con fondo gris: posición y "pocos min." (tabla y reporte). */
+.position-tag,
+.cell-note {
   display: inline-block;
   padding: 0 6px;
-  border: 1px solid var(--line-strong);
   border-radius: 4px;
+  background: var(--surface-muted);
   font-size: 11px;
   font-weight: 500;
   color: var(--text-secondary);
 }
 
-.cell-note {
-  margin-right: 6px;
-  font-size: 11px;
-  color: var(--text-secondary);
-}
+.cell-note { margin-right: 6px; }
 
 /* --- Gráfico --- */
 

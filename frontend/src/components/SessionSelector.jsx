@@ -2,7 +2,7 @@ import { sessionTypeLabel, formatDate } from '../metrics.js';
 
 export default function SessionSelector({ sessions, selectedId, onChange }) {
   return (
-    <label className="field">
+    <label className="field field-inline">
       Sesión
       <select value={selectedId ?? ''} onChange={(e) => onChange(Number(e.target.value))}>
         {sessions.map((s) => (

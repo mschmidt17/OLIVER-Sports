@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { METRICS, LEVELS, indexAlerts, cellMark, formatValue } from '../metrics.js';
 
+// text: columna de texto, alineada a la izquierda. El resto son números y van
+// a la derecha (encabezado incluido), para comparar cifras de un vistazo.
 const COLUMNS = [
   { key: 'shirt_number', label: '#' },
-  { key: 'name', label: 'Jugador' },
-  { key: 'position', label: 'Pos.' },
+  { key: 'name', label: 'Jugador', text: true },
+  { key: 'position', label: 'Pos.', text: true },
   ...METRICS,
 ];
 
@@ -74,7 +76,11 @@ export default function MetricsTable({ players, alerts }) {
             {COLUMNS.map((column) => {
               const sortInfo = sort.key === column.key ? SORT_DIRECTIONS[sort.direction] : null;
               return (
-                <th key={column.key} aria-sort={sortInfo?.ariaSort ?? 'none'}>
+                <th
+                  key={column.key}
+                  className={column.text ? undefined : 'num'}
+                  aria-sort={sortInfo?.ariaSort ?? 'none'}
+                >
                   <button type="button" onClick={() => handleSort(column.key)}>
                     {column.label}
                     {column.unit && <span className="unit"> ({column.unit})</span>}

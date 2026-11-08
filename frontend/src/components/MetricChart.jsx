@@ -74,14 +74,18 @@ export default function MetricChart({ players, alerts, thresholds }) {
 
   return (
     <div>
-      <label className="field">
-        Métrica
-        <select value={metricKey} onChange={(e) => setMetricKey(e.target.value)}>
-          {METRICS.map((m) => (
-            <option key={m.key} value={m.key}>{m.label}</option>
-          ))}
-        </select>
-      </label>
+      {/* El título vive acá y no en App: así comparte fila con el selector de métrica. */}
+      <div className="panel-header">
+        <h2 className="section-title">Comparación por jugador</h2>
+        <label className="field field-inline">
+          Métrica
+          <select value={metricKey} onChange={(e) => setMetricKey(e.target.value)}>
+            {METRICS.map((m) => (
+              <option key={m.key} value={m.key}>{m.label}</option>
+            ))}
+          </select>
+        </label>
+      </div>
 
       {/* Título del eje Y: qué se mide y en qué unidad. */}
       <p className="chart-axis-title">
@@ -128,7 +132,7 @@ export default function MetricChart({ players, alerts, thresholds }) {
             );
           })}
 
-          <Bar dataKey="value" maxBarSize={24} radius={[4, 4, 0, 0]} isAnimationActive={false}>
+          <Bar dataKey="value" maxBarSize={32} radius={[3, 3, 0, 0]} isAnimationActive={false}>
             {data.map((d) => (
               <Cell key={d.id} fill={d.level ? LEVELS[d.level].color : NORMAL_COLOR} />
             ))}

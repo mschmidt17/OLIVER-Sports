@@ -71,7 +71,6 @@ export default function App() {
                   </section>
 
                   <section className="panel">
-                    <h2 className="section-title">Comparación por jugador</h2>
                     <MetricChart
                       players={metrics.players}
                       alerts={metrics.alerts}
