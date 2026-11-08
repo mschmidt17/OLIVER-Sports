@@ -6,6 +6,7 @@ import MetricsTable from './components/MetricsTable.jsx';
 import MetricChart from './components/MetricChart.jsx';
 import ReportPanel from './components/ReportPanel.jsx';
 import Sidebar from './components/Sidebar.jsx';
+import { SparkleIcon } from './components/icons.jsx';
 
 export default function App() {
   const [sessions, setSessions] = useState(null);
@@ -80,8 +81,8 @@ export default function App() {
                 </div>
 
                 <section className="panel">
-                  <h2 className="section-title">Reporte con IA</h2>
-                  <ReportPanel key={sessionId} sessionId={sessionId} />
+                  <h2 className="section-title"><SparkleIcon />Reporte con IA</h2>
+                  <ReportPanel key={metrics.session.id} session={metrics.session} />
                 </section>
               </div>
             </>

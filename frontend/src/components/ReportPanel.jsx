@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { generateReport } from '../api/client.js';
-import { LEVELS, metricLabel, formatValue } from '../metrics.js';
+import { LEVELS, metricLabel, formatValue, formatDate, shortName } from '../metrics.js';
+import { ChartIcon, StarIcon, FlagIcon, InfoIcon } from './icons.jsx';
 
 // Fecha y hora en formato de 24 h ("5/11/26, 16:40"), sin depender
 // de cómo el navegador formatee por defecto.
@@ -12,43 +13,60 @@ function formatDateTime(isoDate) {
   });
 }
 
+// "#6 Molina": número y apellido alcanzan dentro del informe; la posición
+// y el nombre completo ya están en la tabla.
 function PlayerName({ player }) {
-  return (
-    <span className="report-player">
-      <strong>#{player.shirt_number} {player.name}</strong>
-      <span className="position-tag">{player.position}</span>
-    </span>
-  );
+  return <strong className="report-player">#{player.shirt_number} {shortName(player.name)}</strong>;
 }
 
-function AlertItem({ item }) {
-  const level = LEVELS[item.level];
-  return (
-    <span className={`badge badge-${item.level}`}>
-      {level.icon} {metricLabel(item.metric)} {formatValue(item.value)} · {level.label}
-    </span>
-  );
+// Las alertas de un jugador agrupadas por nivel, crítico primero:
+//   ◆ Crítico: Carga 810
+//   ▲ Advertencia: Distancia 10.488 · RPE 9
+// Así cada nivel se nombra una sola vez, con ícono, color y texto.
+function AlertLevels({ items }) {
+  const byLevel = Map.groupBy(items, (item) => item.level);
+  // Orden de prioridad explícito: LEVELS define etiquetas y colores, no un orden.
+  const levels = ['critical', 'warning'].filter((level) => byLevel.has(level));
+
+  return levels.map((level) => (
+    <p key={level} className={`alert-line alert-${level}`}>
+      <span className="level-icon" aria-hidden="true">{LEVELS[level].icon}</span>
+      <strong>{LEVELS[level].label}:</strong>{' '}
+      {byLevel.get(level).map((item) => `${metricLabel(item.metric)} ${formatValue(item.value)}`).join(' · ')}
+    </p>
+  ));
 }
 
-// Una sección del informe: etiqueta en mayúsculas y su contenido.
-function ReportSection({ title, children }) {
+// Una sección del informe: título con ícono y su contenido.
+function ReportSection({ title, icon, children }) {
   return (
     <section className="report-section">
-      <h3 className="section-label">{title}</h3>
+      <h3 className="report-heading">{icon}{title}</h3>
       {children}
     </section>
   );
 }
 
-function ReportContent({ report, onRegenerate }) {
+function ReportContent({ session, report, onRegenerate }) {
   // Un jugador puede tener varias métricas sin dato: se agrupan en una sola línea.
   const missingByPlayer = Map.groupBy(report.missing_data, (m) => m.player_id);
 
   return (
     <article className="report">
-      <p className="report-summary">{report.summary}</p>
+      <header className="report-header">
+        <p className="report-brand">
+          <span className="report-wordmark">OLIVER</span>
+          Informe de análisis de sesión
+        </p>
+        <p><strong>{session.title}</strong> · {formatDate(session.date)}</p>
+      </header>
 
-      <ReportSection title="Destacados">
+      <div className="report-summary">
+        <h3 className="report-heading"><ChartIcon />Resumen</h3>
+        <p>{report.summary}</p>
+      </div>
+
+      <ReportSection title="Destacados" icon={<StarIcon />}>
         {report.highlights.length === 0 ? (
           <p className="empty">El modelo no devolvió destacados válidos.</p>
         ) : (
@@ -57,14 +75,14 @@ function ReportContent({ report, onRegenerate }) {
               <li key={h.player_id}>
                 <PlayerName player={h} />
                 {h.low_minutes && <span className="cell-note">pocos min.</span>}
-                <p>{h.reason}</p>
+                {h.reason}
               </li>
             ))}
           </ul>
         )}
       </ReportSection>
 
-      <ReportSection title="Alertas">
+      <ReportSection title="Alertas" icon={<FlagIcon />}>
         {report.alerts.length === 0 ? (
           <p className="empty">Ningún jugador alcanzó los umbrales en esta sesión.</p>
         ) : (
@@ -72,10 +90,8 @@ function ReportContent({ report, onRegenerate }) {
             {report.alerts.map((a) => (
               <li key={a.player_id}>
                 <PlayerName player={a} />
-                <div className="badges">
-                  {a.items.map((item) => <AlertItem key={item.metric} item={item} />)}
-                </div>
-                {a.comment && <p>{a.comment}</p>}
+                <AlertLevels items={a.items} />
+                {a.comment && <p className="report-comment">{a.comment}</p>}
               </li>
             ))}
           </ul>
@@ -83,12 +99,12 @@ function ReportContent({ report, onRegenerate }) {
       </ReportSection>
 
       {missingByPlayer.size > 0 && (
-        <ReportSection title="Sin dato">
+        <ReportSection title="Sin dato" icon={<InfoIcon />}>
           <ul className="report-list">
             {[...missingByPlayer].map(([playerId, items]) => (
               <li key={playerId}>
                 <PlayerName player={items[0]} />
-                <p>{items.map((m) => metricLabel(m.metric)).join(', ')}</p>
+                {items.map((m) => metricLabel(m.metric)).join(', ')}
               </li>
             ))}
           </ul>
@@ -106,9 +122,9 @@ function ReportContent({ report, onRegenerate }) {
   );
 }
 
-// El padre le pasa key={sessionId}: al cambiar de sesión el panel se
+// El padre le pasa key={session.id}: al cambiar de sesión el panel se
 // monta de nuevo y vuelve al estado inicial, sin lógica extra.
-export default function ReportPanel({ sessionId }) {
+export default function ReportPanel({ session }) {
   const [language, setLanguage] = useState('es');
   const [audience, setAudience] = useState('coach');
   const [status, setStatus] = useState('idle'); // idle | loading | error | done
@@ -120,7 +136,7 @@ export default function ReportPanel({ sessionId }) {
   async function handleGenerate(refresh = false) {
     setStatus('loading');
     try {
-      setReport(await generateReport(sessionId, { language, audience, refresh }));
+      setReport(await generateReport(session.id, { language, audience, refresh }));
       setStatus('done');
     } catch (err) {
       setError(err.message);
@@ -168,7 +184,7 @@ export default function ReportPanel({ sessionId }) {
         <p className="error" role="alert">No se pudo generar el reporte: {error}</p>
       )}
       {status === 'done' && (
-        <ReportContent report={report} onRegenerate={() => handleGenerate(true)} />
+        <ReportContent session={session} report={report} onRegenerate={() => handleGenerate(true)} />
       )}
     </div>
   );

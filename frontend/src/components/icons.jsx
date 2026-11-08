@@ -41,6 +41,32 @@ export function InfoIcon() {
   );
 }
 
+export function SparkleIcon() {
+  return (
+    <Icon>
+      <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" />
+      <path d="M19 15l.7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7z" />
+    </Icon>
+  );
+}
+
+export function StarIcon() {
+  return (
+    <Icon>
+      <path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" />
+    </Icon>
+  );
+}
+
+export function FlagIcon() {
+  return (
+    <Icon>
+      <path d="M5 21V4" />
+      <path d="M5 4h11l-2 4 2 4H5" />
+    </Icon>
+  );
+}
+
 export function ClockIcon() {
   return (
     <Icon>

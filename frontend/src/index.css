@@ -138,12 +138,15 @@ h1, h2, h3, p {
   color: var(--on-navy-muted);
 }
 
+/* Sobre el navy: misma flecha propia (ver "select" más abajo), en blanco. */
 .topbar select {
   max-width: 100%;
-  padding: 8px 14px;
+  padding: 8px 42px 8px 14px;
   border-color: var(--navy-line);
   border-radius: 10px;
-  background: var(--navy-soft);
+  background-color: var(--navy-soft);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-position: right 16px center;
   color: #fff;
   font-weight: 500;
 }
@@ -193,10 +196,22 @@ h1, h2, h3, p {
   padding: 20px;
 }
 
+/* Títulos con ícono: del panel (.section-title) y de cada parte del informe
+   (.report-heading). Comparten forma; cambian tamaño y margen. */
+.section-title,
+.report-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.section-title svg,
+.report-heading svg { color: var(--text-secondary); }
+
 .section-title {
   margin-bottom: 14px;
   font-size: 17px;
-  font-weight: 600;
 }
 
 /* Etiquetas chicas en mayúsculas, como los títulos de OLIVER. */
@@ -346,6 +361,17 @@ select, button {
   cursor: pointer;
 }
 
+/* Flecha propia: la nativa queda pegada al borde y no se puede mover.
+   appearance: none la oculta; el SVG la reemplaza, separada 12px del borde. */
+select {
+  appearance: none;
+  padding-right: 36px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b6870' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+}
+
 button.primary {
   padding: 7px 18px;
   border-color: var(--blue);
@@ -396,6 +422,9 @@ button.secondary:hover { border-color: var(--blue); }
   gap: 12px;
   margin-bottom: 16px;
 }
+
+/* La acción principal se separa de los filtros, a la derecha. */
+.controls .primary { margin-left: auto; }
 
 /* --- Estados: carga, error, vacío --- */
 
@@ -509,10 +538,11 @@ td.no-data { color: var(--text-secondary); font-style: italic; }
 
 td.cell-warning { background: var(--warning-bg); color: var(--warning-text); font-weight: 600; }
 td.cell-critical { background: var(--critical-bg); color: var(--critical-text); font-weight: 600; }
-td.cell-warning .level-icon { color: var(--warning); }
-td.cell-critical .level-icon { color: var(--critical); }
+/* Ícono de nivel: en celdas de la tabla y en las líneas de alerta del reporte. */
+.cell-warning .level-icon, .alert-warning .level-icon { color: var(--warning); }
+.cell-critical .level-icon, .alert-critical .level-icon { color: var(--critical); }
 
-/* Etiquetas chicas con fondo gris: posición y "pocos min." (tabla y reporte). */
+/* Etiquetas chicas con fondo gris: posición (tabla) y "pocos min." (tabla y reporte). */
 .position-tag,
 .cell-note {
   display: inline-block;
@@ -561,15 +591,58 @@ td.cell-critical .level-icon { color: var(--critical); }
 
 /* --- Reporte (informe integrado) --- */
 
-.report-summary {
+/* El informe es una columna: el gap separa sus partes, y cada sección
+   cierra con su propia línea. Una sola regla de espaciado para todo. */
+.report {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+/* Encabezado del informe: identifica el documento aunque se lea suelto. La
+   marca va en color de texto, sin navy ni rosa (son del marco, no de los datos). */
+.report-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+}
+
+.report-brand {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-secondary);
+}
+
+.report-wordmark {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.18em; /* el mismo espaciado que la marca del menú */
+  color: var(--text-primary);
+}
+
+.report-heading {
+  margin-bottom: 10px;
   font-size: 15px;
+}
+
+/* El resumen se destaca con un fondo gris, sin usar colores de nivel ni de marca. */
+.report-summary {
+  padding: 16px;
+  border-radius: 10px;
+  background: var(--page);
+  font-size: 14px;
   line-height: 1.6;
-  padding-bottom: 16px;
 }
 
 .report-section {
-  padding: 16px 0;
-  border-top: 1px solid var(--line);
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
 }
 
 .report-list {
@@ -578,37 +651,21 @@ td.cell-critical .level-icon { color: var(--critical); }
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  font-size: 13.5px;
 }
 
-.report-list p {
+.report-player { margin-right: 6px; }
+
+.alert-line { margin-top: 2px; }
+.alert-line .level-icon { margin-right: 6px; }
+.alert-warning strong { color: var(--warning-text); }
+.alert-critical strong { color: var(--critical-text); }
+
+.report-comment {
   margin-top: 2px;
   color: var(--text-secondary);
 }
-
-.report-player {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-right: 8px;
-}
-
-.badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 4px;
-}
-
-.badge {
-  padding: 1px 8px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.badge-warning { background: var(--warning-bg); color: var(--warning-text); }
-.badge-critical { background: var(--critical-bg); color: var(--critical-text); }
 
 .report-footer {
   display: flex;
@@ -616,8 +673,6 @@ td.cell-critical .level-icon { color: var(--critical); }
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding-top: 16px;
-  border-top: 1px solid var(--line);
   font-size: 12px;
   color: var(--text-secondary);
 }
