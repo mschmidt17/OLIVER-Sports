@@ -82,10 +82,14 @@ La carpeta de lógica pura se llama `domain/` (no `lib/`).
 - **Prompt**: si cambian las instrucciones o el formato, crear `sessionReport.v2.js`
   en lugar de editar v1.
 - **Puerto**: el backend usa 4000 (el 3000 suele estar ocupado).
-- **Identidad visual** (inspirada en OLIVER): Rubik; navy `#001c26` solo en la barra
-  superior; azul `#2378f8` para lo interactivo; rosa `#e04080` solo como acento en la
-  barra, **nunca en el área de datos**; warning `#c98500` y crítico `#d93636`, siempre
-  con ícono y texto (validados por contraste y daltonismo). Sin degradados ni menú lateral.
+- **Identidad visual** (inspirada en OLIVER): Rubik; navy `#001c26` solo en el marco
+  (menú lateral y barra superior); azul `#2378f8` para lo interactivo; rosa `#e04080`
+  solo como acento junto a la marca en el menú, **nunca en el área de datos** (tampoco
+  en el reporte); warning `#c98500` y crítico `#d93636`, siempre con ícono y texto
+  (validados por contraste y daltonismo), y nunca como decoración. Sin degradados.
+- **Layout**: menú lateral (marca + "Análisis de sesión"), barra superior con el
+  selector de sesión, resumen en un único bloque, y debajo datos (tabla y gráfico)
+  a la izquierda y reporte a la derecha desde 1400px; en una columna por debajo.
 
 ## Forma de trabajo
 

@@ -1,9 +1,13 @@
-/* Identidad visual inspirada en OLIVER: navy de marca en el marco,
-   datos sobre fondo claro y color reservado para el significado. */
+/* Identidad visual inspirada en OLIVER: navy de marca en el marco (menú lateral
+   y barra superior), datos sobre fondo claro y color reservado para el significado. */
 :root {
   /* Marca */
-  --navy: #001c26;           /* barra superior */
+  --navy: #001c26;           /* marco: menú lateral y barra superior */
   --navy-soft: #0b2a35;      /* controles sobre el navy */
+  --navy-active: #0d3357;    /* ítem activo del menú */
+  --navy-line: #23414c;      /* bordes sobre el navy */
+  --on-navy-muted: #c9d4d9;  /* texto secundario sobre el navy */
+  --on-navy-icon: #8fb8fb;   /* íconos del menú */
   --blue: #2378f8;           /* acciones interactivas */
   --blue-dark: #184b96;      /* hover / presionado */
   --pink: #e04080;           /* acento de marca: solo en el marco, nunca en datos */
@@ -24,6 +28,9 @@
   --critical-bg: #fce8e8;
   --critical-text: #9c1f1f;
 
+  /* Separación entre bloques del contenido */
+  --gap: 18px;
+
   font-family: 'Rubik', system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-size: 14px;
   line-height: 1.5;
@@ -39,154 +46,282 @@ h1, h2, h3, p {
   margin: 0;
 }
 
-/* --- Barra superior --- */
+/* --- Marco: menú lateral + columna principal --- */
 
-.topbar {
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  flex: 0 0 220px;
+  /* Queda fijo al hacer scroll: la marca y la sección siempre a la vista. */
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  box-sizing: border-box;
+  padding: 22px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
   background: var(--navy);
   color: #fff;
 }
 
-.topbar-inner {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 12px 24px;
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 28px;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+/* El rosa de la marca: solo este acento, siempre dentro del marco. */
+.wordmark-accent {
+  width: 7px;
+  height: 7px;
+  background: var(--pink);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  margin-left: 4px;
+  padding: 0 16px;
+  border-radius: 6px 0 0 6px;
+  color: var(--on-navy-muted);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.nav-item:hover { color: #fff; }
+
+.nav-item[aria-current='page'] {
+  background: var(--navy-active);
+  border-right: 3px solid var(--blue);
+  color: #fff;
+  font-weight: 600;
+}
+
+.nav-item svg { color: var(--on-navy-icon); }
+
+/* min-width: 0 deja que la columna se achique; sin esto la tabla ancha
+   empuja el layout en lugar de hacer scroll dentro de su panel. */
+.app-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  min-height: 56px;
+  box-sizing: border-box;
+  padding: 8px 28px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.brand {
-  display: flex;
-  align-items: baseline;
-  gap: 16px;
-}
-
-.wordmark {
-  font-weight: 700;
-  font-size: 20px;
-  letter-spacing: 0.08em;
-}
-
-/* Vista activa: el rosa de la marca como subrayado. */
-.brand-view {
-  font-size: 13px;
-  color: #c9d4d9;
-  padding-bottom: 4px;
-  border-bottom: 2px solid var(--pink);
+  justify-content: flex-end;
+  background: var(--navy);
 }
 
 .topbar .field {
   flex-direction: row;
   align-items: center;
-  gap: 8px;
-  color: #c9d4d9;
+  gap: 14px;
+  font-size: 14px;
+  color: var(--on-navy-muted);
 }
 
 .topbar select {
+  max-width: 100%;
+  padding: 8px 14px;
+  border-color: var(--navy-line);
+  border-radius: 10px;
   background: var(--navy-soft);
-  border-color: #23414c;
   color: #fff;
-  min-width: 320px;
+  font-weight: 500;
+}
+
+/* En pantallas angostas el menú pasa a ser una franja arriba del contenido. */
+@media (max-width: 900px) {
+  .app-shell { flex-direction: column; }
+
+  .sidebar {
+    position: static;
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 16px 0;
+  }
+
+  .wordmark { padding: 0 12px 12px; }
+  .nav-item { margin: 0; border-radius: 6px 6px 0 0; }
+
+  .nav-item[aria-current='page'] {
+    border-right: none;
+    border-bottom: 3px solid var(--blue);
+  }
+
+  .topbar { padding: 8px 16px; justify-content: flex-start; }
+  .content { padding: 16px; }
 }
 
 /* --- Contenido --- */
 
-main {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 24px;
+.content {
+  width: 100%;
+  max-width: 1600px;
+  box-sizing: border-box;
+  padding: 22px 28px 40px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: var(--gap);
 }
 
 .panel {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 20px;
 }
 
-/* Etiquetas en mayúsculas, como los títulos de OLIVER. */
-.section-title,
-.section-label,
-.eyebrow,
-.summary dt {
-  font-size: 12px;
+.section-title {
+  margin-bottom: 14px;
+  font-size: 17px;
   font-weight: 600;
-  letter-spacing: 0.08em;
+}
+
+/* Etiquetas chicas en mayúsculas, como los títulos de OLIVER. */
+.section-label {
+  margin-bottom: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-secondary);
 }
 
-.section-title {
-  margin-bottom: 16px;
-}
-
-/* Gráfico y reporte lado a lado en pantallas anchas. */
-.analysis-grid {
+/* Datos a la izquierda (tabla y gráfico), reporte a la derecha. Por debajo de
+   1400px el reporte quedaría muy angosto, así que todo pasa a una columna. */
+.dashboard-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 24px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--gap);
   align-items: start;
 }
 
-/* min-width: 0 deja que cada columna se achique; sin esto, Recharts mide mal
-   su contenedor dentro de la grilla y el gráfico puede quedar comprimido. */
-.analysis-grid > * {
+/* min-width: 0: sin esto, Recharts mide mal su contenedor dentro de la
+   grilla y el gráfico puede quedar comprimido. */
+.data-column {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
 }
 
-@media (min-width: 1100px) {
-  .analysis-grid {
-    grid-template-columns: 7fr 5fr;
+@media (min-width: 1400px) {
+  .dashboard-grid {
+    grid-template-columns: minmax(0, 1fr) 420px;
   }
 }
 
 /* --- Encabezado de la sesión y resumen --- */
 
-.session-header h1 {
-  font-size: 24px;
-  font-weight: 600;
-  margin-top: 4px;
-}
-
-.summary {
+.session-header {
   display: flex;
-  flex-wrap: wrap;
-  margin: 16px 0 0;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
+  flex-direction: column;
+  gap: var(--gap);
 }
 
-.summary-item {
-  padding: 12px 32px 12px 0;
-  margin-right: 32px;
-  border-right: 1px solid var(--line);
+.session-meta {
+  font-size: 14px;
+  color: var(--text-secondary);
 }
 
-.summary-item:last-child {
-  border-right: none;
+.session-header h1 {
+  margin-top: 4px;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.2;
 }
 
-.summary dd {
-  margin: 2px 0 0;
+/* Ancho del ícono y separación: los usan el título del indicador y la
+   sangría de los nombres, para que queden alineados con la etiqueta. */
+.summary {
+  --summary-icon-width: 20px;
+  --summary-icon-gap: 8px;
+  padding: 14px 20px 16px;
+}
+
+/* Un solo bloque: cuatro columnas iguales con separadores, sin tarjetas. */
+.summary-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: 24px;
+}
+
+/* Separador antes de cada indicador salvo el primero, sin importar cuántos haya. */
+.summary-item + .summary-item {
+  padding-left: 24px;
+  border-left: 1px solid var(--line);
+}
+
+.summary-headline {
+  display: flex;
+  align-items: center;
+  gap: var(--summary-icon-gap);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Ancho fijo: los números quedan alineados aunque un indicador no tenga ícono. */
+.summary-icon {
+  display: inline-flex;
+  justify-content: center;
+  width: var(--summary-icon-width);
+  font-size: 16px;
+  color: var(--text-secondary);
+}
+
+.summary-count {
   font-size: 24px;
   font-weight: 600;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
-.summary-critical dd { color: var(--critical); }
-.summary-warning dd { color: var(--warning-text); }
+.summary-critical .summary-icon,
+.summary-critical .summary-count { color: var(--critical); }
+.summary-warning .summary-icon { color: var(--warning); }
+.summary-warning .summary-count { color: var(--warning-text); }
 
-/* Apellidos debajo del número: más específico que ".summary dd" para no heredar su tamaño. */
-.summary .summary-players {
-  max-width: 240px;
-  font-size: 13px;
-  font-weight: 400;
+.summary-players {
+  margin: 4px 0 0 calc(var(--summary-icon-width) + var(--summary-icon-gap));
+  font-size: 12px;
   color: var(--text-secondary);
+}
+
+/* En pantallas angostas, 2 x 2 y sin separadores: el espacio ya separa. */
+@media (max-width: 700px) {
+  .summary-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 16px;
+  }
+
+  .summary-item + .summary-item {
+    padding-left: 0;
+    border-left: none;
+  }
 }
 
 /* --- Controles --- */
@@ -408,10 +543,6 @@ td.cell-critical .level-icon { color: var(--critical); }
 .report-section {
   padding: 16px 0;
   border-top: 1px solid var(--line);
-}
-
-.section-label {
-  margin-bottom: 10px;
 }
 
 .report-list {

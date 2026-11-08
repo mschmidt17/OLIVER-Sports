@@ -5,6 +5,7 @@ import SessionHeader from './components/SessionHeader.jsx';
 import MetricsTable from './components/MetricsTable.jsx';
 import MetricChart from './components/MetricChart.jsx';
 import ReportPanel from './components/ReportPanel.jsx';
+import Sidebar from './components/Sidebar.jsx';
 
 export default function App() {
   const [sessions, setSessions] = useState(null);
@@ -39,54 +40,55 @@ export default function App() {
   }, [sessionId]);
 
   return (
-    <>
-      <header className="topbar">
-        <div className="topbar-inner">
-          <div className="brand">
-            <span className="wordmark">OLIVER</span>
-            <span className="brand-view">Análisis de sesión</span>
-          </div>
+    <div className="app-shell">
+      <Sidebar />
+
+      <div className="app-main">
+        <header className="topbar">
           {sessions?.length > 0 && (
             <SessionSelector sessions={sessions} selectedId={sessionId} onChange={setSessionId} />
           )}
-        </div>
-      </header>
+        </header>
 
-      <main>
-        {error && <p className="error" role="alert">{error}</p>}
-        {sessions?.length === 0 && (
-          <p className="empty">No hay sesiones cargadas. Corré <code>npm run seed</code> en el backend.</p>
-        )}
-        {!error && sessionId != null && !metrics && <p className="loading">Cargando métricas…</p>}
+        <main className="content">
+          {error && <p className="error" role="alert">{error}</p>}
+          {sessions?.length === 0 && (
+            <p className="empty">No hay sesiones cargadas. Corré <code>npm run seed</code> en el backend.</p>
+          )}
+          {!error && sessionId != null && !metrics && <p className="loading">Cargando métricas…</p>}
 
-        {metrics && (
-          <>
-            <SessionHeader session={metrics.session} players={metrics.players} alerts={metrics.alerts} />
+          {metrics && (
+            <>
+              <SessionHeader session={metrics.session} players={metrics.players} alerts={metrics.alerts} />
 
-            <section className="panel">
-              <h2 className="section-title">Métricas por jugador</h2>
-              <MetricsTable players={metrics.players} alerts={metrics.alerts} />
-            </section>
+              {/* En pantallas anchas: datos a la izquierda y reporte a la derecha.
+                  En angostas, todo en una columna (el reporte queda al final). */}
+              <div className="dashboard-grid">
+                <div className="data-column">
+                  <section className="panel">
+                    <h2 className="section-title">Métricas por jugador</h2>
+                    <MetricsTable players={metrics.players} alerts={metrics.alerts} />
+                  </section>
 
-            {/* En pantallas anchas, gráfico y reporte van lado a lado. */}
-            <div className="analysis-grid">
-              <section className="panel">
-                <h2 className="section-title">Comparación por jugador</h2>
-                <MetricChart
-                  players={metrics.players}
-                  alerts={metrics.alerts}
-                  thresholds={metrics.thresholds}
-                />
-              </section>
+                  <section className="panel">
+                    <h2 className="section-title">Comparación por jugador</h2>
+                    <MetricChart
+                      players={metrics.players}
+                      alerts={metrics.alerts}
+                      thresholds={metrics.thresholds}
+                    />
+                  </section>
+                </div>
 
-              <section className="panel">
-                <h2 className="section-title">Reporte con IA</h2>
-                <ReportPanel key={sessionId} sessionId={sessionId} />
-              </section>
-            </div>
-          </>
-        )}
-      </main>
-    </>
+                <section className="panel">
+                  <h2 className="section-title">Reporte con IA</h2>
+                  <ReportPanel key={sessionId} sessionId={sessionId} />
+                </section>
+              </div>
+            </>
+          )}
+        </main>
+      </div>
+    </div>
   );
 }
