@@ -290,12 +290,14 @@ tooltip sobre la fecha: al cuerpo técnico no le aporta y se mantiene a mano par
   gráfico) a la izquierda y reporte a la derecha. El menú lateral se contrae con una
   pestaña en su borde y deja solo los íconos (con tooltip).
 - **El layout depende del espacio del contenido, no de la ventana:** el reporte va al
-  costado solo si el área de contenido mide 1080px o más (unos 680px para la tabla y 380px
-  para el reporte); si no, va debajo de los datos. Se resuelve con una *container query*
-  (`@container`) en lugar de una *media query*: así responde igual al tamaño de pantalla,
-  al zoom, al escalado de Windows y a contraer el menú. Por ejemplo, en una pantalla de
-  1280px el reporte va abajo con el menú expandido y al costado con el menú contraído.
-  Por debajo de 900px de ventana el menú se vuelve una franja arriba.
+  costado solo si la tabla entra completa a su lado (área de contenido de 1320px o más:
+  unos 910px de tabla y 380px de reporte); si no, va debajo de los datos. La regla es que
+  los datos nunca se esconden para hacerle lugar al reporte: para un preparador físico la
+  tabla es la herramienta principal y el reporte se consulta a pedido. Se resuelve con una
+  *container query* (`@container`) en lugar de una *media query*: responde igual al tamaño
+  de pantalla, al zoom, al escalado de Windows y a contraer el menú. En una notebook el
+  reporte va debajo; en un monitor de 1920px, al costado. Por debajo de 900px de ventana
+  el menú se vuelve una franja arriba.
 - **Reporte como informe:** encabezado con la sesión, resumen destacado y secciones
   (Destacados, Alertas, Sin dato). Las alertas de cada jugador se agrupan por nivel
   ("◆ Crítico: Carga 810" / "▲ Advertencia: Distancia 10.488 · RPE 9"), así cada nivel se

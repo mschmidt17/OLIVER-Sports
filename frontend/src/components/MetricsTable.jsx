@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { METRICS, LEVELS, indexAlerts, cellMark, formatValue } from '../metrics.js';
+import { ClockIcon } from './icons.jsx';
 
 // text: columna de texto, alineada a la izquierda. El resto son números y van
 // a la derecha (encabezado incluido), para comparar cifras de un vistazo.
@@ -42,7 +43,15 @@ function MetricCell({ value, mark }) {
       className={level ? `num alert-cell level-${mark.alert.level}` : 'num'}
       title={level ? `${level.label}: alcanzó el umbral de ${formatValue(mark.alert.threshold)}` : undefined}
     >
-      {mark.lowMinutes && <span className="cell-note">pocos min.</span>}
+      {/* Pocos minutos: el reloj del resumen, no una etiqueta de texto, para que la
+          columna no se ensanche por una sola fila. El texto queda en el tooltip
+          y, oculto a la vista, para el lector de pantalla. */}
+      {mark.lowMinutes && (
+        <span className="low-minutes" title="Pocos minutos: jugó menos de la mitad de la sesión">
+          <ClockIcon />
+          <span className="visually-hidden">pocos minutos</span>
+        </span>
+      )}
       {level && <span className="level-icon" aria-label={level.label}>{level.icon} </span>}
       {formatValue(value)}
     </td>

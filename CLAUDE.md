@@ -104,8 +104,9 @@ La carpeta de lógica pura se llama `domain/` (no `lib/`).
   (título de la sesión, nombres) no se traducen: se muestran como están en la base.
 - **Layout**: menú lateral (marca + "Análisis de sesión"), barra superior con el
   selector de sesión, resumen en un único bloque, y debajo datos (tabla y gráfico)
-  a la izquierda y reporte a la derecha cuando el contenido mide 1080px o más
-  (`@container` sobre `.content`, no `@media`); si no, en una columna. Menú lateral
+  a la izquierda y reporte a la derecha solo si la tabla entra completa a su lado
+  (contenido ≥ 1320px, `@container` sobre `.content`, no `@media`); si no, en una
+  columna con el reporte al final. Los datos nunca se esconden por el reporte. Menú lateral
   contraíble con una pestaña en el borde.
 
 ## Forma de trabajo

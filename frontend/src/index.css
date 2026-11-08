@@ -355,9 +355,12 @@ h1, h2, h3, p {
   color: var(--text-secondary);
 }
 
-/* Datos a la izquierda (tabla y gráfico), reporte a la derecha, solo si entran
-   los dos: la tabla necesita unos 680px y el reporte 380px (más el gap).
-   Si no, todo en una columna y el reporte queda debajo de los datos. */
+/* Datos a la izquierda (tabla y gráfico), reporte a la derecha, solo si la
+   tabla entra completa a su lado: los datos nunca se esconden para hacerle
+   lugar al reporte. Tabla completa ≈ 910px (con el padding del panel) + gap
+   18px + reporte 380px ≈ 1310 → corte en 1320px de contenido. Si se agregan
+   columnas a la tabla, este número hay que recalcularlo.
+   Si no entra, todo en una columna y el reporte queda debajo de los datos. */
 .dashboard-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -374,7 +377,7 @@ h1, h2, h3, p {
   gap: var(--gap);
 }
 
-@container (min-width: 1080px) {
+@container (min-width: 1320px) {
   .dashboard-grid {
     grid-template-columns: minmax(0, 1fr) 380px;
   }
@@ -702,7 +705,7 @@ td.alert-cell {
   font-weight: 600;
 }
 
-/* Etiquetas chicas con fondo gris: posición (tabla) y "pocos min." (tabla y reporte). */
+/* Etiquetas chicas con fondo gris: posición (tabla) y "pocos min." (reporte). */
 .position-tag,
 .cell-note {
   display: inline-block;
@@ -715,6 +718,29 @@ td.alert-cell {
 }
 
 .cell-note { margin-right: 6px; }
+
+/* Reloj de "pocos minutos" en la tabla: chico, gris y alineado con el número. */
+.low-minutes {
+  display: inline-flex;
+  vertical-align: -2px;
+  margin-right: 4px;
+  color: var(--text-secondary);
+}
+
+.low-minutes svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Oculto a la vista pero legible para el lector de pantalla (patrón estándar). */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 
 /* --- Gráfico --- */
 
