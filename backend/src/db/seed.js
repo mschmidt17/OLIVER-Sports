@@ -71,10 +71,10 @@ function seed() {
   const data = readSessionData();
   const teamId = data.team.id;
 
-  createTables();
-
-  // Todo en una transacción: o se carga completo o no se carga nada.
+  // Todo en una transacción, incluida la creación de tablas (en SQLite es
+  // transaccional): si algo falla, la base queda como estaba.
   const loadAll = db.transaction(() => {
+    createTables();
     insertTeam(data.team);
     insertPlayers(data.players, teamId);
     insertSessions(data.sessions, teamId);

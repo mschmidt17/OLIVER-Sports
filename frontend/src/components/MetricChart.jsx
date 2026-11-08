@@ -106,13 +106,14 @@ export default function MetricChart({ players, alerts, thresholds }) {
             tick={TICK}
             tickLine={false}
           />
-          {/* Mismo formato de números que la tabla: 12.000, no 12000. */}
+          {/* Formato 12.000, como la tabla. Arrow porque Recharts pasa (valor, índice)
+              y el índice entraría como locale de formatValue. */}
           {/* Con escala fija (RPE 1-10) el eje termina en su máximo real, con marcas
               parejas (0, 2, 4… 10); si no, Recharts lo calcula solo. */}
           <YAxis
             domain={[0, metric.max ?? 'auto']}
             ticks={metric.max ? fixedScaleTicks(metric.max) : undefined}
-            tickFormatter={formatValue}
+            tickFormatter={(value) => formatValue(value)}
             width={56}
             stroke={AXIS_COLOR}
             tick={TICK}

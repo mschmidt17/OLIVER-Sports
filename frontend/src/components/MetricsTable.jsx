@@ -52,7 +52,13 @@ function MetricCell({ value, mark }) {
           <span className="visually-hidden">pocos minutos</span>
         </span>
       )}
-      {level && <span className="level-icon" aria-label={level.label}>{level.icon} </span>}
+      {/* El ícono se oculta al lector de pantalla y el nivel se lee como texto. */}
+      {level && (
+        <>
+          <span className="level-icon" aria-hidden="true">{level.icon} </span>
+          <span className="visually-hidden">{level.label} </span>
+        </>
+      )}
       {formatValue(value)}
     </td>
   );
