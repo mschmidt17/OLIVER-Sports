@@ -154,10 +154,13 @@ frontend/src/
 ├── api/
 │   └── client.js                llamadas al backend
 └── components/
-    ├── SessionSelector.jsx
+    ├── Sidebar.jsx              menú lateral: marca y sección activa
+    ├── SessionSelector.jsx      selector de sesión (barra superior)
+    ├── SessionHeader.jsx        encabezado de la sesión y bloque de resumen
     ├── MetricsTable.jsx
     ├── MetricChart.jsx
-    └── ReportPanel.jsx
+    ├── ReportPanel.jsx          controles y reporte con IA como informe
+    └── icons.jsx                íconos SVG propios, sin librería
 ```
 
 ---
@@ -268,10 +271,24 @@ por destinatario, y el esquema de respuesta. Si cambia, se crea `v2` en vez de e
 - **Proxy de Vite en vez de CORS:** el navegador ve un solo origen y no hace falta otra librería.
 - **Identidad visual inspirada en OLIVER:** tipografía Rubik y la paleta de su sitio
   (navy, azul y rosa), pero con colores planos: un sitio de marketing busca impacto y una
-  herramienta de trabajo busca legibilidad. El navy queda en el marco y los datos van sobre
-  fondo claro. El color se reserva para el significado: el rosa nunca aparece en los datos,
-  para que no se confunda con una alerta, y los colores de alerta están validados por
-  contraste y daltonismo.
+  herramienta de trabajo busca legibilidad. El navy queda en el marco (menú lateral y barra
+  superior) y los datos van sobre fondo claro. El color se reserva para el significado:
+  el azul solo para lo interactivo, el rosa nunca aparece en los datos (para que no se
+  confunda con una alerta) y los colores de alerta, validados por contraste y daltonismo,
+  van siempre con ícono y texto y nunca como decoración. Por eso, por ejemplo, el resumen
+  del reporte se destaca con fondo gris y no celeste.
+- **Layout de dashboard:** menú lateral con la marca y la sección activa, barra superior
+  con el selector de sesión, el resumen en un único bloque y, debajo, datos (tabla y
+  gráfico) a la izquierda y reporte a la derecha. Por debajo de 1400px el reporte quedaría
+  muy angosto, así que todo pasa a una columna; por debajo de 900px el menú se vuelve una
+  franja arriba. Con una sola sección no hay menú hamburguesa.
+- **Reporte como informe:** encabezado con la sesión, resumen destacado y secciones
+  (Destacados, Alertas, Sin dato). Las alertas de cada jugador se agrupan por nivel
+  ("◆ Crítico: Carga 810" / "▲ Advertencia: Distancia 10.488 · RPE 9"), así cada nivel se
+  nombra una sola vez con su ícono, color y texto.
+- **Tabla compacta con números a la derecha:** cifras de distinto largo (3.900 y 10.488)
+  quedan encolumnadas y se comparan de un vistazo; el número y el nombre quedan fijos al
+  desplazarse de costado.
 - **Puerto 4000:** el 3000 suele estar ocupado por otras apps de desarrollo.
 - **Tests unitarios solo de `domain/`:** es donde están las reglas de negocio. Los
   endpoints los probé manualmente y con scripts.
@@ -322,7 +339,9 @@ Usé **Claude Code** (Claude) como asistente durante todo el desarrollo:
 
 ## Convención de commits
 
-[Conventional Commits](https://www.conventionalcommits.org/) en español: `tipo: descripción`.
+[Conventional Commits](https://www.conventionalcommits.org/) en español: `tipo: descripción`,
+o `tipo(alcance): descripción` cuando ayuda a ubicar el cambio (por ejemplo,
+`feat(ui): estilo compacto de tabla y gráfico`).
 
 | Tipo | Uso |
 |---|---|

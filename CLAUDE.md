@@ -96,4 +96,4 @@ La carpeta de lógica pura se llama `domain/` (no `lib/`).
 - Trabajar por fases. Al terminar cada una: explicar qué hace cada archivo,
   cómo probarlo, proponer un mensaje de commit, y esperar el OK.
 - Commits con Conventional Commits en español (`feat:`, `fix:`, `refactor:`,
-  `chore:`, `test:`, `docs:`). El autor hace los commits.
+  `chore:`, `test:`, `docs:`), con alcance opcional (`feat(ui):`). El autor hace los commits.
