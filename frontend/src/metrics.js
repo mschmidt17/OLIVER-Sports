@@ -2,31 +2,43 @@
 
 // Métricas que se muestran, en orden, con su etiqueta y unidad.
 // Minutos no lleva unidad: la etiqueta ya la dice.
+// short: abreviatura para el encabezado de la tabla, donde el ancho es justo.
+// Solo la lleva HSR, de uso habitual en preparación física; la tabla muestra el
+// nombre completo al pasar el mouse (<abbr>). El gráfico y el reporte usan label.
+// labelEn: nombre para el reporte en inglés. Va acá, junto al español, para que
+// cada métrica se defina en un solo lugar.
 export const METRICS = [
-  { key: 'minutes_played', label: 'Minutos', unit: '' },
-  { key: 'total_distance_m', label: 'Distancia', unit: 'm' },
+  { key: 'minutes_played', label: 'Minutos', labelEn: 'Minutes', unit: '' },
+  { key: 'total_distance_m', label: 'Distancia', labelEn: 'Distance', unit: 'm' },
   // Es una distancia (metros corridos por encima de cierto umbral de velocidad),
-  // no una velocidad: la velocidad es max_speed_kmh.
-  { key: 'high_speed_running_m', label: 'Dist. alta velocidad', unit: 'm' },
-  { key: 'sprints', label: 'Sprints', unit: '' },
-  { key: 'max_speed_kmh', label: 'Vel. máx.', unit: 'km/h' },
-  { key: 'accelerations', label: 'Aceleraciones', unit: '' },
+  // no una velocidad: la velocidad es max_speed_kmh. HSR = high-speed running.
+  { key: 'high_speed_running_m', label: 'Dist. alta velocidad', labelEn: 'High-speed running', short: 'HSR', unit: 'm' },
+  { key: 'sprints', label: 'Sprints', labelEn: 'Sprints', unit: '' },
+  { key: 'max_speed_kmh', label: 'Vel. máx.', labelEn: 'Max speed', unit: 'km/h' },
+  { key: 'accelerations', label: 'Aceleraciones', labelEn: 'Accelerations', unit: '' },
   // max: la escala tiene techo fijo (RPE va de 1 a 10); el gráfico lo usa para el eje.
-  { key: 'rpe', label: 'RPE', unit: '', max: 10 },
-  { key: 'workload_au', label: 'Carga', unit: 'AU' },
+  { key: 'rpe', label: 'RPE', labelEn: 'RPE', unit: '', max: 10 },
+  { key: 'workload_au', label: 'Carga', labelEn: 'Workload', unit: 'AU' },
 ];
 
-export function metricLabel(key) {
-  return METRICS.find((m) => m.key === key)?.label ?? key;
+// language: 'es' (por defecto, la app) o 'en' (solo el reporte en inglés).
+export function metricLabel(key, language = 'es') {
+  const metric = METRICS.find((m) => m.key === key);
+  if (!metric) return key;
+  return language === 'en' ? metric.labelEn : metric.label;
 }
 
 // Niveles de alerta: el color nunca va solo, siempre con ícono y texto.
 // Colores validados (contraste y daltonismo) contra fondo blanco; el rosa
 // de la marca OLIVER no se usa acá para que no se confunda con una alerta.
 export const LEVELS = {
-  warning: { label: 'Advertencia', icon: '▲', color: '#c98500' },
-  critical: { label: 'Crítico', icon: '◆', color: '#d93636' },
+  warning: { label: 'Advertencia', labelEn: 'Warning', icon: '▲', color: '#c98500' },
+  critical: { label: 'Crítico', labelEn: 'Critical', icon: '◆', color: '#d93636' },
 };
+
+export function levelLabel(level, language = 'es') {
+  return language === 'en' ? LEVELS[level].labelEn : LEVELS[level].label;
+}
 
 // Apellido (última palabra del nombre): alcanza para identificar a un jugador
 // en espacios chicos, como el eje del gráfico o la fila de resumen.
@@ -82,6 +94,7 @@ export function byShirtNumber(a, b) {
   return a.shirt_number - b.shirt_number;
 }
 
-export function formatValue(value) {
-  return value.toLocaleString('es-AR');
+// locale: el reporte en inglés usa 'en-US' (10,488); en español, 10.488.
+export function formatValue(value, locale = 'es-AR') {
+  return value.toLocaleString(locale);
 }

@@ -1,20 +1,55 @@
+import { useState } from 'react';
 import {
   METRICS, LEVELS, indexAlerts, cellMark, byShirtNumber, sessionTypeLabel, formatDate, shortName,
 } from '../metrics.js';
 import { InfoIcon, ClockIcon } from './icons.jsx';
 
-// "Molina (2), Romero (2), Ríos, Álvarez, Acosta (2)": cada jugador una vez, con
-// cuántas celdas tiene si son más de una. Los números suman el total de arriba.
-function namesWithCount(cellPlayers) {
+// Cuántos jugadores se muestran antes del "+N más".
+const VISIBLE_PLAYERS = 3;
+
+// Cada jugador una vez, con cuántas celdas tiene. Primero los más afectados
+// (más celdas) y, a igualdad, por número de camiseta, como la tabla.
+function playersWithCount(cellPlayers) {
   const countById = new Map(); // player_id -> { player, count }
-  for (const player of [...cellPlayers].sort(byShirtNumber)) {
+  for (const player of cellPlayers) {
     const entry = countById.get(player.player_id) ?? { player, count: 0 };
     entry.count += 1;
     countById.set(player.player_id, entry);
   }
   return [...countById.values()]
-    .map(({ player, count }) => (count > 1 ? `${shortName(player.name)} (${count})` : shortName(player.name)))
-    .join(', ');
+    .sort((a, b) => b.count - a.count || byShirtNumber(a.player, b.player));
+}
+
+// "Molina (2)" si tiene más de una celda; si no, solo "Molina".
+function playerLabel({ player, count }) {
+  return count > 1 ? `${shortName(player.name)} (${count})` : shortName(player.name);
+}
+
+// "Molina (2), Romero (2), Acosta (2) +2 más". Solo se recorta si quedan 2 o
+// más afuera: "+1 más" ocupa casi lo mismo que el nombre que esconde.
+// Ojo: "+N" cuenta jugadores; el número grande del indicador cuenta celdas.
+function PlayerList({ cellPlayers }) {
+  const [expanded, setExpanded] = useState(false);
+  const players = playersWithCount(cellPlayers);
+  const hiddenCount = players.length - VISIBLE_PLAYERS;
+  const canCollapse = hiddenCount >= 2;
+  const visible = canCollapse && !expanded ? players.slice(0, VISIBLE_PLAYERS) : players;
+
+  return (
+    <p className="summary-players">
+      {visible.map(playerLabel).join(', ')}
+      {canCollapse && (
+        <button
+          type="button"
+          className="link-button"
+          aria-expanded={expanded}
+          onClick={() => setExpanded((current) => !current)}
+        >
+          {expanded ? 'ver menos' : `+${hiddenCount} más`}
+        </button>
+      )}
+    </p>
+  );
 }
 
 // Un indicador del resumen: ícono, número, etiqueta y, debajo, los jugadores.
@@ -31,7 +66,7 @@ function SummaryItem({ label, cells, level, icon }) {
         <span className="summary-count">{count}</span>
         {label}
       </p>
-      {count > 0 && <p className="summary-players">{namesWithCount(cells)}</p>}
+      {count > 0 && <PlayerList cellPlayers={cells} />}
     </li>
   );
 }

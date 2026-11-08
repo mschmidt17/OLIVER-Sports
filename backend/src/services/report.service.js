@@ -83,6 +83,10 @@ export async function generateSessionReport(sessionId, { language, audience, ref
 
   return {
     ...completeReport(result.aiOutput, context, data),
+    // Con qué se generó (todo es parte de la clave de caché): el frontend muestra
+    // el informe en este idioma aunque el usuario cambie el selector después.
+    language: key.language,
+    audience: key.audience,
     prompt_version: key.promptVersion,
     model: key.model,
     cached: result.cached,

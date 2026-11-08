@@ -50,6 +50,10 @@ npm run dev              # abrir la URL que muestra Vite (por defecto http://loc
 El frontend llama a `/api/...` y Vite lo redirige al backend. El puerto lo toma
 de `PORT` en `backend/.env`, así que no hay que configurar nada más.
 
+> El reporte con IA se muestra al costado de los datos si hay espacio; en pantallas
+> chicas (o con mucho zoom o escalado) va debajo. Contraer el menú lateral con la
+> pestaña de su borde libera espacio y puede llevarlo al costado.
+
 Para apagar cada uno, `Ctrl + C` en su terminal.
 
 ### 3. Tests
@@ -148,6 +152,7 @@ backend/
     └── prompts/
         └── sessionReport.v1.js  prompt versionado + esquema de la respuesta
 
+frontend/public/                 isotipo y logo oficiales de OLIVER (favicon y menú lateral)
 frontend/src/
 ├── App.jsx                      página principal
 ├── metrics.js                   métricas, niveles de alerta y helpers compartidos
@@ -251,7 +256,8 @@ con `player_id` y textos), y el backend aplica estas barreras:
 
 `prompts/sessionReport.v1.js` contiene las instrucciones, las variantes por idioma y
 por destinatario, y el esquema de respuesta. Si cambia, se crea `v2` en vez de editar
-`v1`, y cada reporte informa con qué versión se generó.
+`v1`, y cada reporte informa con qué versión y modelo se generó (en la interfaz, como
+tooltip sobre la fecha: al cuerpo técnico no le aporta y se mantiene a mano para revisar).
 
 ### Caché de reportes (bonus)
 
@@ -270,22 +276,33 @@ por destinatario, y el esquema de respuesta. Si cambia, se crea `v2` en vez de e
   El backend igual soporta `order_by` porque lo pide la API.
 - **Proxy de Vite en vez de CORS:** el navegador ve un solo origen y no hace falta otra librería.
 - **Identidad visual inspirada en OLIVER:** tipografía Rubik y la paleta de su sitio
-  (navy, azul y rosa), pero con colores planos: un sitio de marketing busca impacto y una
+  (navy y azul), pero con colores planos: un sitio de marketing busca impacto y una
   herramienta de trabajo busca legibilidad. El navy queda en el marco (menú lateral y barra
-  superior) y los datos van sobre fondo claro. El color se reserva para el significado:
-  el azul solo para lo interactivo, el rosa nunca aparece en los datos (para que no se
-  confunda con una alerta) y los colores de alerta, validados por contraste y daltonismo,
-  van siempre con ícono y texto y nunca como decoración. Por eso, por ejemplo, el resumen
-  del reporte se destaca con fondo gris y no celeste.
+  superior) y los datos van sobre fondo claro; la marca es el isotipo y el logo oficiales,
+  sin modificar. El color se reserva para el significado: el azul solo para lo interactivo
+  (el rosa de la marca no se usa, para que no se confunda con una alerta) y los colores de
+  alerta, validados por contraste y daltonismo,
+  van siempre con ícono y texto y nunca como decoración. Única excepción al azul: el
+  reporte con IA usa el azul de marca en tinte suave como identidad (fichas y resumen),
+  para distinguir a simple vista lo que generó la IA del resto de los datos.
 - **Layout de dashboard:** menú lateral con la marca y la sección activa, barra superior
   con el selector de sesión, el resumen en un único bloque y, debajo, datos (tabla y
-  gráfico) a la izquierda y reporte a la derecha. Por debajo de 1400px el reporte quedaría
-  muy angosto, así que todo pasa a una columna; por debajo de 900px el menú se vuelve una
-  franja arriba. Con una sola sección no hay menú hamburguesa.
+  gráfico) a la izquierda y reporte a la derecha. El menú lateral se contrae con una
+  pestaña en su borde y deja solo los íconos (con tooltip).
+- **El layout depende del espacio del contenido, no de la ventana:** el reporte va al
+  costado solo si el área de contenido mide 1080px o más (unos 680px para la tabla y 380px
+  para el reporte); si no, va debajo de los datos. Se resuelve con una *container query*
+  (`@container`) en lugar de una *media query*: así responde igual al tamaño de pantalla,
+  al zoom, al escalado de Windows y a contraer el menú. Por ejemplo, en una pantalla de
+  1280px el reporte va abajo con el menú expandido y al costado con el menú contraído.
+  Por debajo de 900px de ventana el menú se vuelve una franja arriba.
 - **Reporte como informe:** encabezado con la sesión, resumen destacado y secciones
   (Destacados, Alertas, Sin dato). Las alertas de cada jugador se agrupan por nivel
   ("◆ Crítico: Carga 810" / "▲ Advertencia: Distancia 10.488 · RPE 9"), así cada nivel se
-  nombra una sola vez con su ícono, color y texto.
+  nombra una sola vez con su ícono, color y texto, y cada línea lleva el fondo de su nivel
+  como en la tabla. El informe se muestra entero en el idioma en que se generó: en inglés
+  cambian títulos, niveles, métricas, números (10,488) y fechas (Sep 19, 2026); el título
+  de la sesión queda como está en la base.
 - **Tabla compacta con números a la derecha:** cifras de distinto largo (3.900 y 10.488)
   quedan encolumnadas y se comparan de un vistazo; el número y el nombre quedan fijos al
   desplazarse de costado.

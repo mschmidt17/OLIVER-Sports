@@ -82,7 +82,7 @@ export default function MetricsTable({ players, alerts }) {
                   aria-sort={sortInfo?.ariaSort ?? 'none'}
                 >
                   <button type="button" onClick={() => handleSort(column.key)}>
-                    {column.label}
+                    {column.short ? <abbr title={column.label}>{column.short}</abbr> : column.label}
                     {column.unit && <span className="unit"> ({column.unit})</span>}
                     <span className="sort-arrow">{sortInfo?.arrow}</span>
                   </button>

@@ -50,6 +50,9 @@ backend/src
   prompts/   sessionReport.v1.js — prompt versionado + esquema Zod de la respuesta
 frontend/src
   api/client.js, metrics.js (definiciones compartidas), components/
+frontend/public
+  favicon.svg, favicon-32x32.png — isotipo de OLIVER (pestaña y menú lateral)
+  logo-oliver-sports-white.webp — logo oficial en blanco (menú lateral)
 ```
 
 La carpeta de lógica pura se llama `domain/` (no `lib/`).
@@ -84,12 +87,26 @@ La carpeta de lógica pura se llama `domain/` (no `lib/`).
 - **Puerto**: el backend usa 4000 (el 3000 suele estar ocupado).
 - **Identidad visual** (inspirada en OLIVER): Rubik; navy `#001c26` solo en el marco
   (menú lateral y barra superior); azul `#2378f8` para lo interactivo; rosa `#e04080`
-  solo como acento junto a la marca en el menú, **nunca en el área de datos** (tampoco
-  en el reporte); warning `#c98500` y crítico `#d93636`, siempre con ícono y texto
+  hoy no se usa (si vuelve, solo en el marco y **nunca en el área de datos** ni en el
+  reporte); warning `#c98500` y crítico `#d93636`, siempre con ícono y texto
   (validados por contraste y daltonismo), y nunca como decoración. Sin degradados.
+  La marca en el menú es el isotipo y el logo oficiales (tomados de oliversports.ai),
+  sin modificarlos: el isotipo en su azul (coincide con `#2378f8`, es la marca, no algo
+  interactivo) y el logo en blanco para el fondo navy.
+  Única excepción al azul: el **reporte con IA** usa el azul en tinte suave como
+  identidad (fichas de íconos y de jugador, fondo del resumen). Dentro del reporte, cada
+  línea de alerta lleva el fondo de su nivel, igual que las celdas de la tabla.
+- **Idioma del reporte**: el informe se muestra entero en el idioma en que se generó
+  (títulos, niveles, métricas, números y fechas); los controles de la app siguen en
+  español. Los textos fijos están en `REPORT_TEXT` (ReportPanel.jsx); los nombres de
+  métricas y niveles en inglés, en `labelEn` de `METRICS`/`LEVELS` (metrics.js), junto
+  al español. El backend devuelve `language` con el reporte. Los datos
+  (título de la sesión, nombres) no se traducen: se muestran como están en la base.
 - **Layout**: menú lateral (marca + "Análisis de sesión"), barra superior con el
   selector de sesión, resumen en un único bloque, y debajo datos (tabla y gráfico)
-  a la izquierda y reporte a la derecha desde 1400px; en una columna por debajo.
+  a la izquierda y reporte a la derecha cuando el contenido mide 1080px o más
+  (`@container` sobre `.content`, no `@media`); si no, en una columna. Menú lateral
+  contraíble con una pestaña en el borde.
 
 ## Forma de trabajo
 
