@@ -10,13 +10,18 @@
   --on-navy-icon: #8fb8fb;   /* íconos del menú */
   --blue: #2378f8;           /* acciones interactivas */
   --blue-dark: #184b96;      /* hover / presionado */
-  --pink: #e04080;           /* acento de marca: solo en el marco, nunca en datos */
 
   /* Superficies y texto */
   --page: #f4f5f6;
   --surface: #ffffff;
   --surface-muted: #eef0f1;  /* etiquetas (posición, "pocos min.") */
   --surface-hover: #f7f9fa;  /* fila bajo el mouse */
+  --surface-subtle: #f8f9fa; /* bloques dentro del reporte */
+
+  /* Tinte del azul de marca: identidad del reporte con IA (no es interactivo) */
+  --blue-tint: #eaf2fe;
+  --blue-tint-soft: #f3f8ff;
+  --blue-tint-line: #dbe8fd;
   --line: #e3e6e8;
   --line-strong: #c5ccd0;
   --text-primary: #0f1c22;
@@ -76,10 +81,18 @@ h1, h2, h3, p {
 }
 
 .sidebar {
-  flex: 0 0 220px;
-  /* Queda fijo al hacer scroll: la marca y la sección siempre a la vista. */
+  /* Medidas del menú en un solo lugar: contraer solo cambia --sidebar-width. */
+  --sidebar-width: 220px;
+  --sidebar-width-collapsed: 64px;
+  --tab-width: 20px;
+  flex: 0 0 var(--sidebar-width);
+  /* Contraer/expandir anima solo el ancho; el contenido (flex: 1) se acomoda solo. */
+  transition: flex-basis 200ms ease;
+  /* Queda fijo al hacer scroll: la marca y la sección siempre a la vista.
+     Sticky también sirve de referencia para la pestaña (position: absolute). */
   position: sticky;
   top: 0;
+  z-index: 10; /* la pestaña y el tooltip pasan por encima del contenido */
   height: 100vh;
   box-sizing: border-box;
   padding: 22px 0;
@@ -90,27 +103,35 @@ h1, h2, h3, p {
   color: #fff;
 }
 
+/* Marca: isotipo azul + logo oficial en blanco, pensado para fondos oscuros. */
 .wordmark {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 28px;
-  font-size: 19px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
+  gap: 10px;
+  padding: 0 22px;
+  overflow: hidden; /* mientras el menú se expande, recorta el logo en vez de desbordar */
 }
 
-/* El rosa de la marca: solo este acento, siempre dentro del marco. */
-.wordmark-accent {
-  width: 7px;
-  height: 7px;
-  background: var(--pink);
+/* flex-shrink: 0: se recortan, no se deforman. */
+.wordmark-logo {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+}
+
+/* El logo mide 402×44: se fija el alto y el ancho sale de la proporción. */
+.wordmark-text {
+  flex-shrink: 0;
+  height: 15px;
+  width: auto;
 }
 
 .nav-item {
+  position: relative; /* referencia del tooltip en modo contraído */
   display: flex;
   align-items: center;
   gap: 12px;
+  white-space: nowrap;
   min-height: 44px;
   margin-left: 4px;
   padding: 0 16px;
@@ -129,7 +150,84 @@ h1, h2, h3, p {
   font-weight: 600;
 }
 
-.nav-item svg { color: var(--on-navy-icon); }
+.nav-item svg {
+  flex-shrink: 0;
+  color: var(--on-navy-icon);
+}
+
+/* Mientras el menú se expande, el nombre se recorta en vez de desbordar. */
+.nav-label { overflow: hidden; }
+
+/* Pestaña para contraer/expandir: pegada al borde derecho, a media altura de la
+   pantalla, del mismo navy que el menú para que se lea como parte de él. */
+.sidebar-toggle {
+  position: absolute;
+  top: 50%;
+  right: calc(-1 * var(--tab-width)); /* sale entera del borde del menú */
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tab-width);
+  height: 48px;
+  padding: 0;
+  border: none;
+  border-radius: 0 8px 8px 0;
+  background: var(--navy);
+  color: var(--on-navy-muted);
+}
+
+.sidebar-toggle:hover { background: var(--navy-soft); color: #fff; }
+
+/* La flecha gira con el estado: ‹ contrae, › expande. */
+.sidebar-toggle svg { transition: transform 200ms ease; }
+.is-collapsed .sidebar-toggle svg { transform: rotate(180deg); }
+
+/* Menú contraído (solo en escritorio). 901px es el complemento del corte de
+   900px de más abajo, donde el menú pasa a ser una franja y no se contrae.
+   Quedan el isotipo y los íconos; la sección activa conserva su fondo y su borde. */
+@media (min-width: 901px) {
+  .sidebar.is-collapsed { --sidebar-width: var(--sidebar-width-collapsed); }
+
+  .is-collapsed .wordmark {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .is-collapsed .wordmark-text { display: none; }
+
+  .is-collapsed .nav-item {
+    justify-content: center;
+    margin-left: 0;
+    padding: 0;
+    border-radius: 0;
+  }
+
+  /* El nombre de la sección pasa a ser el tooltip: mismo texto, otro lugar.
+     Con opacity 0 sigue siendo legible para el lector de pantalla. */
+  .is-collapsed .nav-label {
+    position: absolute;
+    left: calc(100% + 10px);
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: var(--navy);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 120ms ease;
+  }
+
+  .is-collapsed .nav-item:hover .nav-label,
+  .is-collapsed .nav-item:focus-visible .nav-label { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar, .nav-label, .sidebar-toggle svg { transition: none; }
+}
 
 /* min-width: 0 deja que la columna se achique; sin esto la tabla ancha
    empuja el layout en lugar de hacer scroll dentro de su panel. */
@@ -194,12 +292,17 @@ h1, h2, h3, p {
   }
 
   .topbar { padding: 8px 16px; justify-content: flex-start; }
+  .sidebar-toggle { display: none; } /* acá el menú es una franja: no se contrae */
   .content { padding: 16px; }
 }
 
 /* --- Contenido --- */
 
+/* container-type: el layout de adentro (.dashboard-grid) se decide según el
+   ancho real del contenido, no el de la ventana. Así responde también al
+   zoom, al escalado de Windows y a contraer el menú lateral. */
 .content {
+  container-type: inline-size;
   width: 100%;
   max-width: 1600px;
   box-sizing: border-box;
@@ -226,8 +329,16 @@ h1, h2, h3, p {
   font-weight: 600;
 }
 
+/* Íconos de título en una ficha con el tinte azul: el reporte con IA (el único
+   panel con ícono en el título) se identifica por el azul de marca. */
 .section-title svg,
-.report-heading svg { color: var(--text-secondary); }
+.report-heading svg {
+  box-sizing: content-box;
+  padding: 6px;
+  border-radius: 8px;
+  background: var(--blue-tint);
+  color: var(--blue);
+}
 
 .section-title {
   margin-bottom: 14px;
@@ -244,8 +355,9 @@ h1, h2, h3, p {
   color: var(--text-secondary);
 }
 
-/* Datos a la izquierda (tabla y gráfico), reporte a la derecha. Por debajo de
-   1400px el reporte quedaría muy angosto, así que todo pasa a una columna. */
+/* Datos a la izquierda (tabla y gráfico), reporte a la derecha, solo si entran
+   los dos: la tabla necesita unos 680px y el reporte 380px (más el gap).
+   Si no, todo en una columna y el reporte queda debajo de los datos. */
 .dashboard-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -262,9 +374,9 @@ h1, h2, h3, p {
   gap: var(--gap);
 }
 
-@media (min-width: 1400px) {
+@container (min-width: 1080px) {
   .dashboard-grid {
-    grid-template-columns: minmax(0, 1fr) 420px;
+    grid-template-columns: minmax(0, 1fr) 380px;
   }
 }
 
@@ -344,6 +456,20 @@ h1, h2, h3, p {
   color: var(--text-secondary);
 }
 
+/* Botón con aspecto de enlace ("+2 más" / "ver menos"). Azul oscuro y no
+   --blue: a 12px el azul de marca no llega al contraste mínimo (4,5:1). */
+.link-button {
+  margin-left: 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: inherit;
+  font-weight: 500;
+  color: var(--blue-dark);
+}
+
+.link-button:hover { text-decoration: underline; }
+
 /* En pantallas angostas, 2 x 2 y sin separadores: el espacio ya separa. */
 @media (max-width: 700px) {
   .summary-list {
@@ -365,6 +491,12 @@ h1, h2, h3, p {
   gap: 4px;
   font-size: 12px;
   color: var(--text-secondary);
+}
+
+/* Foco de teclado igual en todos los botones (Tab), sin aparecer al hacer clic. */
+button:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
 }
 
 select, button {
@@ -503,7 +635,7 @@ thead th {
    arranca donde termina la primera: su ancho + el padding a ambos lados. */
 table {
   --number-col-width: 28px;
-  --cell-padding-x: 10px;
+  --cell-padding-x: 8px;
 }
 
 th:nth-child(1), td:nth-child(1) {
@@ -516,6 +648,9 @@ th:nth-child(2), td:nth-child(2) {
   position: sticky;
   left: calc(var(--number-col-width) + 2 * var(--cell-padding-x));
   border-right: 1px solid var(--line);
+  /* width: 1% + nowrap: la columna mide justo el nombre más largo. Sin esto, el
+     navegador le da una parte del ancho sobrante y se lo quita a las métricas. */
+  width: 1%;
 }
 
 /* Las celdas fijas necesitan fondo propio para tapar lo que pasa por debajo. */
@@ -526,6 +661,7 @@ thead th:nth-child(1), thead th:nth-child(2) { z-index: 3; }
 /* El hover no pisa el fondo de las celdas con alerta. */
 tbody tr:hover td:not(.alert-cell) { background: var(--surface-hover); }
 
+/* Encabezado en una línea: nombre en mayúsculas y, al lado, la unidad (.unit). */
 th button {
   border: none;
   padding: 0;
@@ -534,15 +670,21 @@ th button {
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
-th[aria-sort='ascending'] button,
-th[aria-sort='descending'] button { color: var(--text-primary); }
+/* Abreviatura (HSR): sin el subrayado punteado que el navegador pone por defecto,
+   para que se vea como el resto de los encabezados. El nombre completo sigue
+   en el tooltip (title) y el lector de pantalla lo lee. */
+th abbr { text-decoration: none; }
 
+/* Unidad: sin mayúsculas forzadas ni su espaciado, y en gris, para que se lea
+   como un dato del nombre y no como parte de él ("km/h", no "KM/H"). */
 .unit {
-  text-transform: none;
   font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-secondary);
 }
 
 .sort-arrow {
@@ -620,7 +762,7 @@ td.alert-cell {
 }
 
 /* Encabezado del informe: identifica el documento aunque se lea suelto. La
-   marca va en color de texto, sin navy ni rosa (son del marco, no de los datos). */
+   marca va en color de texto, sin navy (es del marco, no de los datos). */
 .report-header {
   display: flex;
   flex-direction: column;
@@ -638,25 +780,38 @@ td.alert-cell {
 }
 
 .report-wordmark {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 17px;
   font-weight: 700;
-  letter-spacing: 0.18em; /* el mismo espaciado que la marca del menú */
+  letter-spacing: 0.18em; /* texto y no logo: el logo oficial es blanco y el informe es claro */
   color: var(--text-primary);
 }
 
+.report-logo {
+  width: 20px;
+  height: 20px;
+}
+
+/* Tamaño y margen propios; la forma (ícono + texto) la comparte con .section-title. */
 .report-heading {
   margin-bottom: 10px;
   font-size: 15px;
 }
 
-/* El resumen se destaca con un fondo gris, sin usar colores de nivel ni de marca. */
+/* El resumen se destaca con el tinte azul del reporte; la ficha del ícono
+   va en blanco para que no se pierda sobre el mismo tinte. */
 .report-summary {
-  padding: 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--blue-tint-line);
   border-radius: 10px;
-  background: var(--page);
+  background: var(--blue-tint-soft);
   font-size: 14px;
   line-height: 1.6;
 }
+
+.report-summary .report-heading svg { background: var(--surface); }
 
 .report-section {
   padding-bottom: 16px;
@@ -673,9 +828,35 @@ td.alert-cell {
   font-size: 13.5px;
 }
 
-.report-player { margin-right: 6px; }
+/* Cada jugador en su propio bloque: separa las entradas sin agregar líneas. */
+.report-list li {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface-subtle);
+}
 
-.alert-line { margin-top: 2px; }
+/* Número y apellido como ficha: ancla la vista al recorrer la lista. */
+.report-player {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 0 7px;
+  border-radius: 6px;
+  background: var(--blue-tint);
+  color: var(--blue-dark);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Cada línea de alerta con el fondo de su nivel (como las celdas de la tabla):
+   el color sigue diciendo algo, no decora. */
+.alert-line {
+  width: fit-content;
+  margin-top: 6px;
+  padding: 3px 10px;
+  border-radius: 8px;
+  background: var(--level-bg);
+}
+
 .alert-line .level-icon { margin-right: 6px; }
 .alert-line strong { color: var(--level-text); }
 
@@ -692,4 +873,9 @@ td.alert-cell {
   gap: 12px;
   font-size: 12px;
   color: var(--text-secondary);
+}
+
+.report-actions {
+  display: flex;
+  gap: 8px;
 }

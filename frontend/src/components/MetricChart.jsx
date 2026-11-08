@@ -93,7 +93,9 @@ export default function MetricChart({ players, alerts, thresholds }) {
         {metric.unit && ` (${metric.unit})`}
       </p>
 
-      <ResponsiveContainer width="100%" height={300}>
+      {/* debounce: al contraer el menú el ancho cambia durante 200 ms; así el
+          gráfico se redibuja una vez al final y no en cada cuadro de la animación. */}
+      <ResponsiveContainer width="100%" height={300} debounce={200}>
         <BarChart data={data} margin={{ top: 16, right: 16, bottom: 0, left: 0 }}>
           <CartesianGrid vertical={false} stroke={GRID_COLOR} />
           {/* interval={0}: muestra todos los apellidos, sin que Recharts oculte alguno. */}

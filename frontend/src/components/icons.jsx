@@ -31,6 +31,14 @@ export function ChartIcon() {
   );
 }
 
+export function ChevronLeftIcon() {
+  return (
+    <Icon>
+      <path d="m15 6-6 6 6 6" />
+    </Icon>
+  );
+}
+
 export function InfoIcon() {
   return (
     <Icon>
