@@ -46,7 +46,7 @@ CREATE TABLE player_sessions (
   PRIMARY KEY (session_id, player_id)
 );
 
--- critical es NULL salvo para workload_au.
+-- critical es opcional: NULL si la métrica solo tiene advertencia.
 CREATE TABLE thresholds (
   team_id  INTEGER NOT NULL REFERENCES teams(id),
   metric   TEXT NOT NULL,

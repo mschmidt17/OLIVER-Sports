@@ -1,8 +1,7 @@
 import express from 'express';
 import sessionsRouter from './routes/sessions.routes.js';
 
-// process.env ya tiene los valores de backend/.env: los carga db/connection.js,
-// que se importa (a través de las rutas) antes de ejecutar este código.
+// process.env ya está cargado: lo hace db/connection.js.
 const app = express();
 const port = process.env.PORT || 4000;
 

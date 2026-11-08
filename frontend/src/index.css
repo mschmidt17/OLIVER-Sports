@@ -612,7 +612,7 @@ table {
   font-variant-numeric: tabular-nums;
 }
 
-/* Densidad compacta: la tabla comparte ancho con el reporte. */
+/* Densidad compacta: así la tabla entra completa al lado del reporte (ver .dashboard-grid). */
 th, td {
   padding: 7px var(--cell-padding-x);
   text-align: left;

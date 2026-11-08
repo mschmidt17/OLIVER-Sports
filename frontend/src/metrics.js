@@ -1,12 +1,7 @@
 // Definiciones compartidas por la tabla, el gráfico y el reporte.
 
-// Métricas que se muestran, en orden, con su etiqueta y unidad.
-// Minutos no lleva unidad: la etiqueta ya la dice.
-// short: abreviatura para el encabezado de la tabla, donde el ancho es justo.
-// Solo la lleva HSR, de uso habitual en preparación física; la tabla muestra el
-// nombre completo al pasar el mouse (<abbr>). El gráfico y el reporte usan label.
-// labelEn: nombre para el reporte en inglés. Va acá, junto al español, para que
-// cada métrica se defina en un solo lugar.
+// Métricas en el orden de la tabla. short: abreviatura del encabezado (nombre
+// completo en el tooltip). labelEn: nombre para el reporte en inglés.
 export const METRICS = [
   { key: 'minutes_played', label: 'Minutos', labelEn: 'Minutes', unit: '' },
   { key: 'total_distance_m', label: 'Distancia', labelEn: 'Distance', unit: 'm' },
@@ -29,8 +24,7 @@ export function metricLabel(key, language = 'es') {
 }
 
 // Niveles de alerta: el color nunca va solo, siempre con ícono y texto.
-// Colores validados (contraste y daltonismo) contra fondo blanco; el rosa
-// de la marca OLIVER no se usa acá para que no se confunda con una alerta.
+// Colores validados por contraste y daltonismo.
 export const LEVELS = {
   warning: { label: 'Advertencia', labelEn: 'Warning', icon: '▲', color: '#c98500' },
   critical: { label: 'Crítico', labelEn: 'Critical', icon: '◆', color: '#d93636' },
@@ -69,7 +63,6 @@ export function indexAlerts(alerts) {
   return new Map(alerts.map((alert) => [alertKey(alert.player_id, alert.metric), alert]));
 }
 
-// Devuelve la alerta de esa celda, o undefined si no tiene.
 function findAlert(alertIndex, playerId, metric) {
   return alertIndex.get(alertKey(playerId, metric));
 }

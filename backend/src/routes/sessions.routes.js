@@ -25,7 +25,6 @@ const metricsQuerySchema = z.object({
   order: z.enum(['asc', 'desc'], { error: 'debe ser asc o desc' }).optional(),
 });
 
-// Si no se envían, el reporte sale en español y para el cuerpo técnico.
 // refresh = true ignora la caché y genera un reporte nuevo.
 const reportBodySchema = z.object({
   language: z.enum(LANGUAGES, { error: `debe ser uno de: ${LANGUAGES.join(', ')}` }).default('es'),

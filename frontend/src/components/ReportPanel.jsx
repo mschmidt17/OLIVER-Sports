@@ -78,7 +78,6 @@ function AlertLevels({ items, language, locale }) {
   ));
 }
 
-// Una sección del informe: título con ícono y su contenido.
 function ReportSection({ title, icon, children }) {
   return (
     <section className="report-section">

@@ -62,8 +62,6 @@ export default function App() {
             <>
               <SessionHeader session={metrics.session} players={metrics.players} alerts={metrics.alerts} />
 
-              {/* En pantallas anchas: datos a la izquierda y reporte a la derecha.
-                  En angostas, todo en una columna (el reporte queda al final). */}
               <div className="dashboard-grid">
                 <div className="data-column">
                   <section className="panel">

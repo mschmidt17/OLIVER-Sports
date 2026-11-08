@@ -64,7 +64,7 @@ function buildOrderBy(orderBy, order) {
   }
   const direction = order === 'desc' ? 'DESC' : 'ASC';
 
-  // NULLS LAST: un jugador sin RPE no debe aparecer primero ni último "por valor".
+  // NULLS LAST: los jugadores sin dato van al final en cualquier dirección.
   // El desempate por player_id deja un orden estable.
   return `ORDER BY ${orderBy} ${direction} NULLS LAST, ps.player_id ASC`;
 }

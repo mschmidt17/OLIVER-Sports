@@ -9,8 +9,7 @@ import {
   PROMPT_VERSION,
 } from '../prompts/sessionReport.v1.js';
 
-// Caché en la tabla reports. Clave: sesión + idioma + destinatario + prompt + modelo.
-// Se guarda la respuesta cruda del modelo y se valida en cada uso.
+// Caché en la tabla reports (clave y motivo en schema.sql).
 const findCachedStmt = db.prepare(`
   SELECT raw_response, created_at FROM reports
   WHERE session_id = @sessionId AND language = @language AND audience = @audience
