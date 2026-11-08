@@ -151,7 +151,8 @@ backend/
     │   ├── index.js             proveedor, timeout, reintento y errores (con su test)
     │   └── geminiClient.js      llamada a Gemini
     └── prompts/
-        └── sessionReport.v1.js  prompt versionado + esquema de la respuesta
+        ├── sessionReport.v1.js  primera versión (se conserva como historial)
+        └── sessionReport.v2.js  prompt en uso + esquema de la respuesta
 
 frontend/public/                 isotipo y logo oficiales de OLIVER (favicon y menú lateral)
 frontend/src/
@@ -255,10 +256,18 @@ con `player_id` y textos), y el backend aplica estas barreras:
 
 ### Prompt versionado
 
-`prompts/sessionReport.v1.js` contiene las instrucciones, las variantes por idioma y
-por destinatario, y el esquema de respuesta. Si cambia, se crea `v2` en vez de editar
-`v1`, y cada reporte informa con qué versión y modelo se generó (en la interfaz, como
-tooltip sobre la fecha: al cuerpo técnico no le aporta y se mantiene a mano para revisar).
+`prompts/sessionReport.v2.js` contiene las instrucciones, las variantes por idioma y
+por destinatario, y el esquema de respuesta. Si cambia, se crea una versión nueva en vez
+de editar la anterior, y cada reporte informa con qué versión y modelo se generó (en la
+interfaz, como tooltip sobre la fecha: al cuerpo técnico no le aporta y se mantiene a
+mano para revisar).
+
+**De v1 a v2:** en v1 el destinatario era una sola frase de tono, y al probarlo los
+reportes para cuerpo técnico y para jugadores casi no se diferenciaban. v2 da
+instrucciones concretas: al cuerpo técnico, lenguaje técnico y una acción para la
+próxima sesión; a los jugadores, segunda persona, sin jerga y con recomendaciones de
+recuperación. Como la versión es parte de la clave de la caché, los reportes de v1
+no se vuelven a servir.
 
 ### Caché de reportes (bonus)
 

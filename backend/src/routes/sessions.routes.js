@@ -6,7 +6,7 @@ import {
   ORDERABLE_COLUMNS,
 } from '../services/metrics.service.js';
 import { generateSessionReport } from '../services/report.service.js';
-import { LANGUAGES, AUDIENCES } from '../prompts/sessionReport.v1.js';
+import { LANGUAGES, AUDIENCES } from '../prompts/sessionReport.v2.js';
 
 const router = Router();
 

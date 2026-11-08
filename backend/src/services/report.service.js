@@ -7,7 +7,7 @@ import {
   buildSessionReportPrompt,
   reportSchema,
   PROMPT_VERSION,
-} from '../prompts/sessionReport.v1.js';
+} from '../prompts/sessionReport.v2.js';
 
 // Caché en la tabla reports (clave y motivo en schema.sql).
 const findCachedStmt = db.prepare(`

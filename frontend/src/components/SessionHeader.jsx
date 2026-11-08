@@ -5,7 +5,7 @@ import {
 import { InfoIcon, ClockIcon } from './icons.jsx';
 
 // Cuántos jugadores se muestran antes del "+N más".
-const VISIBLE_PLAYERS = 3;
+const VISIBLE_PLAYERS = 2;
 
 // Cada jugador una vez, con cuántas celdas tiene. Primero los más afectados
 // (más celdas) y, a igualdad, por número de camiseta, como la tabla.
@@ -25,7 +25,7 @@ function playerLabel({ player, count }) {
   return count > 1 ? `${shortName(player.name)} (${count})` : shortName(player.name);
 }
 
-// "Molina (2), Romero (2), Acosta (2) +2 más". Solo se recorta si quedan 2 o
+// "Molina (2), Romero (2) +3 más". Solo se recorta si quedan 2 o
 // más afuera: "+1 más" ocupa casi lo mismo que el nombre que esconde.
 // Ojo: "+N" cuenta jugadores; el número grande del indicador cuenta celdas.
 function PlayerList({ cellPlayers }) {

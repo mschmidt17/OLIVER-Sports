@@ -47,7 +47,7 @@ backend/src
   services/  metrics.service.js, report.service.js — acceso a la base y orquestación
   domain/    alerts.js, buildContext.js, validateReport.js — lógica pura, con tests al lado (*.test.js)
   ai/        index.js (proveedor, timeout, reintento, errores) + index.test.js, geminiClient.js
-  prompts/   sessionReport.v1.js — prompt versionado + esquema Zod de la respuesta
+  prompts/   sessionReport.v2.js — prompt en uso + esquema Zod de la respuesta (v1 queda como historial)
 frontend/src
   api/client.js, metrics.js (definiciones compartidas), components/
 frontend/public
@@ -82,8 +82,8 @@ La carpeta de lógica pura se llama `domain/` (no `lib/`).
 - **Caché**: tabla `reports`, clave sesión + idioma + destinatario + versión del prompt
   + modelo. Guarda la respuesta cruda del modelo y la revalida en cada uso.
   `refresh: true` en el body fuerza un reporte nuevo.
-- **Prompt**: si cambian las instrucciones o el formato, crear `sessionReport.v2.js`
-  en lugar de editar v1.
+- **Prompt**: si cambian las instrucciones o el formato, crear una versión nueva
+  (`sessionReport.vN+1.js`) en lugar de editar la vigente.
 - **Puerto**: el backend usa 4000 (el 3000 suele estar ocupado).
 - **Identidad visual** (inspirada en OLIVER): Rubik; navy `#001c26` solo en el marco
   (menú lateral y barra superior); azul `#2378f8` para lo interactivo; rosa `#e04080`

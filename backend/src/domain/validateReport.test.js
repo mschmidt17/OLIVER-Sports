@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import data from '../../session_data.json' with { type: 'json' };
 import { buildContext } from './buildContext.js';
 import { validateReport, InvalidReportError } from './validateReport.js';
-import { reportSchema } from '../prompts/sessionReport.v1.js';
+import { reportSchema } from '../prompts/sessionReport.v2.js';
 
 // Contexto real de la sesión 103: jugadores 1 a 12; alertas para 1, 2, 5, 6 y 10.
 const session = data.sessions.find((s) => s.id === 103);
@@ -12,7 +12,7 @@ const context = buildContext({
   thresholds: data.thresholds,
 });
 
-// Valida contra el contexto de la sesión 103 y el esquema del prompt v1.
+// Valida contra el contexto de la sesión 103 y el esquema del prompt.
 function validate(rawText) {
   return validateReport(rawText, context, reportSchema);
 }

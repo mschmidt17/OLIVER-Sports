@@ -10,6 +10,7 @@ const REPORT_TEXT = {
   es: {
     locale: 'es-AR',
     title: 'Informe de análisis de sesión',
+    audience: { coach: 'Para el cuerpo técnico', player: 'Para los jugadores' },
     summary: 'Resumen',
     highlights: 'Destacados',
     alerts: 'Alertas',
@@ -21,6 +22,7 @@ const REPORT_TEXT = {
   en: {
     locale: 'en-US',
     title: 'Session analysis report',
+    audience: { coach: 'For the coaching staff', player: 'For the players' },
     summary: 'Summary',
     highlights: 'Highlights',
     alerts: 'Alerts',
@@ -103,6 +105,8 @@ function ReportContent({ session, report, onRegenerate, onClose }) {
           {text.title}
         </p>
         <p><strong>{session.title}</strong> · {formatSessionDate(session.date, report.language)}</p>
+        {/* Destinatario con el que se generó: el selector puede haber cambiado después. */}
+        <p>{text.audience[report.audience]}</p>
       </header>
 
       <div className="report-summary">
