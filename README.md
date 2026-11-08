@@ -63,8 +63,9 @@ cd backend
 npm test
 ```
 
-30 tests unitarios sobre la detección de alertas, el armado del contexto para la IA
-y la validación de la respuesta del modelo.
+39 tests unitarios sobre la detección de alertas, el armado del contexto para la IA,
+la validación de la respuesta del modelo y el manejo de errores de la IA (reintento,
+timeout y códigos HTTP, con Gemini simulado: no hace falta API key).
 
 ### Variables de entorno (`backend/.env`)
 
@@ -147,7 +148,7 @@ backend/
     │   ├── buildContext.js
     │   └── validateReport.js
     ├── ai/
-    │   ├── index.js             proveedor, timeout, reintento y errores
+    │   ├── index.js             proveedor, timeout, reintento y errores (con su test)
     │   └── geminiClient.js      llamada a Gemini
     └── prompts/
         └── sessionReport.v1.js  prompt versionado + esquema de la respuesta
@@ -309,8 +310,9 @@ tooltip sobre la fecha: al cuerpo técnico no le aporta y se mantiene a mano par
   quedan encolumnadas y se comparan de un vistazo; el número y el nombre quedan fijos al
   desplazarse de costado.
 - **Puerto 4000:** el 3000 suele estar ocupado por otras apps de desarrollo.
-- **Tests unitarios solo de `domain/`:** es donde están las reglas de negocio. Los
-  endpoints los probé manualmente y con scripts.
+- **Tests unitarios de `domain/` y `ai/index.js`:** `domain/` tiene las reglas de negocio
+  y `ai/index.js` el manejo de errores de la IA (con Gemini simulado). Los endpoints los
+  probé manualmente y con scripts.
 
 ---
 

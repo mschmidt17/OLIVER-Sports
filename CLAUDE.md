@@ -18,7 +18,7 @@ legible y explicable línea por línea.**
 npm install
 npm run seed     # crea/recrea backend/data/oliver.db (obligatorio antes del primer arranque)
 npm run dev      # API en http://localhost:4000 (PORT en backend/.env)
-npm test         # Vitest: tests unitarios de src/domain/
+npm test         # Vitest: tests unitarios de src/domain/ y src/ai/index.js
 
 # Frontend (desde frontend/)
 npm install
@@ -46,7 +46,7 @@ backend/src
   routes/    sessions.routes.js — solo reciben, validan con Zod y responden
   services/  metrics.service.js, report.service.js — acceso a la base y orquestación
   domain/    alerts.js, buildContext.js, validateReport.js — lógica pura, con tests al lado (*.test.js)
-  ai/        index.js (proveedor, timeout, reintento, errores), geminiClient.js
+  ai/        index.js (proveedor, timeout, reintento, errores) + index.test.js, geminiClient.js
   prompts/   sessionReport.v1.js — prompt versionado + esquema Zod de la respuesta
 frontend/src
   api/client.js, metrics.js (definiciones compartidas), components/
