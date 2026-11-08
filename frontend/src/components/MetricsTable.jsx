@@ -39,7 +39,7 @@ function MetricCell({ value, mark }) {
   const level = mark.alert && LEVELS[mark.alert.level];
   return (
     <td
-      className={level ? `num cell-${mark.alert.level}` : 'num'}
+      className={level ? `num alert-cell level-${mark.alert.level}` : 'num'}
       title={level ? `${level.label}: alcanzó el umbral de ${formatValue(mark.alert.threshold)}` : undefined}
     >
       {mark.lowMinutes && <span className="cell-note">pocos min.</span>}

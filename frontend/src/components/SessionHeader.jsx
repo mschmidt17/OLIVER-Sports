@@ -25,7 +25,7 @@ function SummaryItem({ label, cells, level, icon }) {
   const activeLevel = count > 0 && level ? LEVELS[level] : null;
 
   return (
-    <li className={activeLevel ? `summary-item summary-${level}` : 'summary-item'}>
+    <li className={activeLevel ? `summary-item level-${level}` : 'summary-item'}>
       <p className="summary-headline">
         <span className="summary-icon" aria-hidden="true">{activeLevel ? activeLevel.icon : icon}</span>
         <span className="summary-count">{count}</span>

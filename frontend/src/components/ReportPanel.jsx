@@ -29,7 +29,7 @@ function AlertLevels({ items }) {
   const levels = ['critical', 'warning'].filter((level) => byLevel.has(level));
 
   return levels.map((level) => (
-    <p key={level} className={`alert-line alert-${level}`}>
+    <p key={level} className={`alert-line level-${level}`}>
       <span className="level-icon" aria-hidden="true">{LEVELS[level].icon}</span>
       <strong>{LEVELS[level].label}:</strong>{' '}
       {byLevel.get(level).map((item) => `${metricLabel(item.metric)} ${formatValue(item.value)}`).join(' · ')}

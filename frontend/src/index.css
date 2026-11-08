@@ -48,6 +48,26 @@ h1, h2, h3, p {
   margin: 0;
 }
 
+/* --- Niveles de alerta --- */
+
+/* Un modificador por nivel que solo define colores. Cada lugar que muestra un
+   nivel (celda, resumen, reporte) agrega level-warning o level-critical y usa
+   estas variables: la paleta de niveles se define en un solo lugar. */
+.level-warning {
+  --level-color: var(--warning);
+  --level-text: var(--warning-text);
+  --level-bg: var(--warning-bg);
+}
+
+.level-critical {
+  --level-color: var(--critical);
+  --level-text: var(--critical-text);
+  --level-bg: var(--critical-bg);
+}
+
+/* El ícono de nivel (▲ / ◆) siempre en el color fuerte del nivel. */
+.level-icon { color: var(--level-color); }
+
 /* --- Marco: menú lateral + columna principal --- */
 
 .app-shell {
@@ -306,7 +326,8 @@ h1, h2, h3, p {
   justify-content: center;
   width: var(--summary-icon-width);
   font-size: 16px;
-  color: var(--text-secondary);
+  /* Con nivel (.level-*) toma su color; sin nivel, gris. */
+  color: var(--level-color, var(--text-secondary));
 }
 
 .summary-count {
@@ -314,12 +335,8 @@ h1, h2, h3, p {
   font-weight: 600;
   line-height: 1;
   font-variant-numeric: tabular-nums;
+  color: var(--level-text, inherit);
 }
-
-.summary-critical .summary-icon,
-.summary-critical .summary-count { color: var(--critical); }
-.summary-warning .summary-icon { color: var(--warning); }
-.summary-warning .summary-count { color: var(--warning-text); }
 
 .summary-players {
   margin: 4px 0 0 calc(var(--summary-icon-width) + var(--summary-icon-gap));
@@ -507,7 +524,7 @@ td:nth-child(1), td:nth-child(2) { background: var(--surface); }
 thead th:nth-child(1), thead th:nth-child(2) { z-index: 3; }
 
 /* El hover no pisa el fondo de las celdas con alerta. */
-tbody tr:hover td:not(.cell-warning, .cell-critical) { background: var(--surface-hover); }
+tbody tr:hover td:not(.alert-cell) { background: var(--surface-hover); }
 
 th button {
   border: none;
@@ -536,11 +553,12 @@ th[aria-sort='descending'] button { color: var(--text-primary); }
 td.player-name { font-weight: 500; }
 td.no-data { color: var(--text-secondary); font-style: italic; }
 
-td.cell-warning { background: var(--warning-bg); color: var(--warning-text); font-weight: 600; }
-td.cell-critical { background: var(--critical-bg); color: var(--critical-text); font-weight: 600; }
-/* Ícono de nivel: en celdas de la tabla y en las líneas de alerta del reporte. */
-.cell-warning .level-icon, .alert-warning .level-icon { color: var(--warning); }
-.cell-critical .level-icon, .alert-critical .level-icon { color: var(--critical); }
+/* Celda con alerta: los colores salen del nivel (.level-*). */
+td.alert-cell {
+  background: var(--level-bg);
+  color: var(--level-text);
+  font-weight: 600;
+}
 
 /* Etiquetas chicas con fondo gris: posición (tabla) y "pocos min." (tabla y reporte). */
 .position-tag,
@@ -659,8 +677,7 @@ td.cell-critical { background: var(--critical-bg); color: var(--critical-text); 
 
 .alert-line { margin-top: 2px; }
 .alert-line .level-icon { margin-right: 6px; }
-.alert-warning strong { color: var(--warning-text); }
-.alert-critical strong { color: var(--critical-text); }
+.alert-line strong { color: var(--level-text); }
 
 .report-comment {
   margin-top: 2px;
