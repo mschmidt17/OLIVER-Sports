@@ -156,8 +156,6 @@ function ReportContent({ session, report, onRegenerate, onClose }) {
       )}
 
       <footer className="report-footer">
-        {/* Modelo y versión del prompt quedan en el tooltip: no le sirven al cuerpo
-            técnico, pero dicen con qué se generó (y son parte de la clave de caché). */}
         <span title={`${report.model} · prompt ${report.prompt_version}`}>
           {formatGeneratedAt(report.created_at, report.language)}.
         </span>

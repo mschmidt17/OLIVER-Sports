@@ -320,8 +320,14 @@ tooltip sobre la fecha: al cuerpo técnico no le aporta y se mantiene a mano par
 
 - **Migraciones** en lugar de recrear la base con el seed.
 - **Tests de integración** de los endpoints (por ejemplo, con supertest) y del flujo de caché.
+- **Tests del frontend** (Vitest + Testing Library) para lo que tiene comportamiento: las
+  funciones de `metrics.js`, el orden y las marcas de la tabla, los conteos del resumen y
+  los estados del reporte. Hoy la lógica de negocio está testeada en el backend y la
+  interfaz se probó a mano.
 - **Evitar llamadas duplicadas al modelo** si llegan dos pedidos iguales al mismo tiempo.
-- **Streaming con SSE** para mostrar el reporte a medida que se genera.
+- **Streaming con SSE:** lo dejé afuera a propósito. El reporte se valida completo
+  (jugadores y números) antes de mostrarse; con streaming el usuario leería texto
+  todavía no validado. Acá pesa más no mostrar datos inventados que la velocidad percibida.
 - **Reporte de evolución** de un jugador a lo largo de las sesiones.
 - **Marcar "sin dato" dentro del gráfico,** en el lugar vacío del jugador. Hoy se explica en
   una nota debajo del gráfico; marcarlo en el lugar requiere dibujar un elemento SVG propio,
