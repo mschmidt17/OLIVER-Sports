@@ -408,7 +408,7 @@ h1, h2, h3, p {
 .summary {
   --summary-icon-width: 20px;
   --summary-icon-gap: 8px;
-  padding: 14px 20px 16px;
+  padding: 14px 20px 14px;
 }
 
 /* Un solo bloque: cuatro columnas iguales con separadores, sin tarjetas. */
@@ -446,7 +446,7 @@ h1, h2, h3, p {
 }
 
 .summary-count {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 600;
   line-height: 1;
   font-variant-numeric: tabular-nums;
