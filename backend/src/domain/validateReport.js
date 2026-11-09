@@ -11,6 +11,9 @@ export class InvalidReportError extends Error {
   }
 }
 
+// El reporte destaca 2 o 3 jugadores (lo pide el enunciado).
+const MIN_HIGHLIGHTS = 2;
+
 function parseJson(rawText) {
   try {
     return JSON.parse(rawText);
@@ -82,6 +85,7 @@ function assertOnlyKnownNumbers(report, context) {
  * - JSON inválido o con formato incorrecto  -> InvalidReportError (502).
  * - Un número que no existe en los datos     -> InvalidReportError (502).
  * - player_id que no está en la sesión        -> se descarta ese elemento.
+ * - Menos de 2 destacados tras el descarte    -> InvalidReportError (502).
  * - Comentario de alerta para un jugador sin alerta calculada -> se descarta.
  */
 export function validateReport(rawText, context, schema) {
@@ -98,6 +102,14 @@ export function validateReport(rawText, context, schema) {
     highlights: keepAllowedPlayers(result.data.highlights, sessionPlayerIds),
     alertComments: keepAllowedPlayers(result.data.alerts, alertedPlayerIds),
   };
+
+  // El esquema cuenta los destacados antes de este descarte: si el modelo
+  // inventó jugadores, pueden quedar menos de los que pide el reporte.
+  if (report.highlights.length < MIN_HIGHLIGHTS) {
+    throw new InvalidReportError(
+      `El reporte tiene menos de ${MIN_HIGHLIGHTS} destacados válidos`,
+    );
+  }
 
   assertOnlyKnownNumbers(report, context);
   return report;

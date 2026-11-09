@@ -14,12 +14,17 @@ app.use((req, res) => {
 });
 
 // Manejador de errores. Express lo detecta por tener 4 argumentos (por eso `next`).
-// - Errores esperados (expose = true): IA caída, respuesta inválida, JSON mal
-//   formado en el body. Se responde su código y su mensaje.
+// - JSON mal formado en el body: 400 con mensaje propio (el del parser está en inglés).
+// - Errores esperados (expose = true): IA caída o respuesta inválida.
+//   Se responde su código y su mensaje.
 // - Cualquier otro: 500 genérico; al cliente no se le filtra SQL ni stack.
 app.use((err, req, res, next) => {
   console.error(err);
 
+  // express.json() marca así el error cuando no puede parsear el body.
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'El body no es un JSON válido' });
+  }
   if (err.expose) {
     return res.status(err.status).json({ error: err.message });
   }

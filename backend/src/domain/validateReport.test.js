@@ -82,6 +82,16 @@ describe('validateReport: jugadores que no existen', () => {
     expect(validate(raw).highlights.map((h) => h.player_id)).toEqual([5, 10]);
   });
 
+  it('si tras el descarte quedan menos de 2 destacados -> InvalidReportError', () => {
+    const raw = modelResponse({
+      highlights: [
+        { player_id: 5, reason: 'Gran despliegue.' },
+        { player_id: 99, reason: 'Jugador inventado.' },
+      ],
+    });
+    expect(() => validate(raw)).toThrow(/menos de 2 destacados/);
+  });
+
   it('descarta comentarios de alerta para jugadores sin alerta calculada', () => {
     // El jugador 7 (arquero) está en la sesión pero no tiene ninguna alerta.
     const raw = modelResponse({
