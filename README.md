@@ -67,11 +67,9 @@ npm run dev
 
 La API queda disponible en `http://localhost:4000`.
 
-**Importante:** el seed debe ejecutarse antes del primer arranque. Crea las tablas y carga los datos de `session_data.json`. Cada ejecución vuelve a cargar los datos desde cero y también elimina la caché de reportes. Si ya tenías una base creada con una versión anterior del proyecto, volvé a correr el seed: la tabla de caché cambió (se agregó `player_id`).
+**Importante:** el seed debe ejecutarse antes del primer arranque. Crea las tablas y carga los datos de `session_data.json`; cada ejecución recarga todo desde cero, incluida la caché de reportes.
 
-La aplicación puede utilizarse sin `GEMINI_API_KEY`: la tabla y el gráfico siguen funcionando, pero la generación del reporte devuelve un error `503` con un mensaje explicativo.
-
-Dejá esta terminal abierta mientras uses la aplicación.
+Sin `GEMINI_API_KEY` la tabla y el gráfico funcionan igual, pero el reporte devuelve un error `503` con un mensaje explicativo.
 
 ### 3. Instalar y ejecutar el frontend
 
@@ -83,13 +81,7 @@ npm install
 npm run dev
 ```
 
-Abrí la URL que muestra Vite (por defecto, `http://localhost:5173`).
-
-El frontend realiza las llamadas a `/api/...` y Vite las redirige al backend. El proxy utiliza el puerto configurado en `PORT` dentro de `backend/.env`.
-
-Si aparece el mensaje **“No se pudo conectar con el backend”**, verificá que el proceso del backend siga ejecutándose.
-
-Para detener cada proceso, usá `Ctrl + C` en su terminal.
+Abrí la URL que muestra Vite (por defecto, `http://localhost:5173`). Vite redirige las llamadas a `/api/...` al backend, usando el `PORT` de `backend/.env`. Si aparece **“No se pudo conectar con el backend”**, verificá que el backend siga corriendo.
 
 ### 4. Ejecutar los tests
 
@@ -99,7 +91,7 @@ Desde la carpeta `backend`:
 npm test
 ```
 
-La suite incluye tests unitarios sobre la detección de alertas, el armado del contexto para la IA, la validación de la respuesta y el manejo de errores del proveedor (reintentos, timeout y códigos HTTP). También hay tests del servicio de reportes (los dos tipos de informe y la caché) y de la validación del body de `POST /sessions/:id/report`; usan una base SQLite temporal con el seed real, así que no tocan `data/oliver.db`. Gemini está simulado en todos los tests, por lo que no hace falta una API key.
+Cubren la detección de alertas, el armado del contexto, la validación de la respuesta del modelo, el manejo de errores del proveedor, el servicio de reportes con su caché y la validación del body de `POST /sessions/:id/report`. Gemini está simulado (no hace falta API key) y los tests que usan la base crean una SQLite temporal, sin tocar `data/oliver.db`.
 
 ### Variables de entorno
 
@@ -131,7 +123,7 @@ GET /sessions/103/metrics?player_id=5
 GET /sessions/103/metrics?order_by=total_distance_m&order=desc
 ```
 
-`order_by` se valida contra una lista permitida de columnas antes de construir la consulta SQL. Esto evita interpolar nombres de columna arbitrarios en `ORDER BY`, donde no se pueden utilizar parámetros SQL convencionales. Los valores `null` quedan siempre al final del ordenamiento.
+`order_by` se valida contra una lista de columnas permitidas, porque `ORDER BY` no acepta parámetros SQL y la columna se interpola en la consulta. Los `null` quedan siempre al final.
 
 ### Generar un reporte
 
@@ -162,16 +154,6 @@ La respuesta incluye siempre `language`, `audience`, `prompt_version`, `model`, 
 
 - **coach:** `summary`, `highlights` (2 o 3 jugadores con su motivo), `alerts` (por jugador, con sus niveles y un comentario) y `missing_data`.
 - **player:** `player` (identidad, minutos y métricas desde la base), `summary`, `positives` (1 a 3, cada uno con la métrica en la que se apoya), `improvements` (0 a 2), `alerts` (las del jugador), `alert_comment` (`null` si no tiene alertas) y `missing_data`.
-
-### Códigos de respuesta relevantes
-
-| Código | Situación |
-|---|---|
-| `400` | Parámetro o body inválido (por ejemplo, `player` sin `player_id` o `coach` con `player_id`). La respuesta incluye el detalle de validación. |
-| `404` | La sesión no existe, o el jugador pedido no participó en ella. |
-| `502` | Respuesta del modelo inválida, contenido que no supera las validaciones o error del proveedor (por ejemplo, API key inválida). |
-| `503` | No hay API key configurada, `AI_PROVIDER` tiene un valor desconocido o el proveedor continúa saturado después del reintento. |
-| `504` | El modelo superó el tiempo máximo de espera. |
 
 ---
 
@@ -256,9 +238,7 @@ frontend/
 
 ### Dos tipos de informe
 
-El challenge pide que el endpoint acepte `audience` (`coach` | `player`), pero no define qué debe cambiar para cada destinatario. En una primera versión, `player` solo cambiaba el tono: seguía siendo el informe de todo el equipo, con párrafos dirigidos a distintos jugadores, y mostraba al plantel las alertas de carga y esfuerzo de cada compañero.
-
-Decidí interpretar `player` como un **informe individual**, porque eso es lo que le sirve a un jugador:
+El challenge pide que el endpoint acepte `audience` (`coach` | `player`), pero no define qué cambia para cada uno. Al principio `player` solo cambiaba el tono del informe del equipo, que además mostraba a todo el plantel las alertas de cada compañero. Decidí interpretarlo como un **informe individual**, que es lo que le sirve a un jugador:
 
 | | `coach` | `player` |
 |---|---|---|
@@ -268,17 +248,13 @@ Decidí interpretar `player` como un **informe individual**, porque eso es lo qu
 | Tono | Técnico | Segunda persona, sin jerga |
 | Prompt | `sessionReport.v3.js` | `playerReport.v1.js` |
 
-Se mantiene un único endpoint porque el challenge pide el parámetro `audience` en él; el servicio separa los dos flujos internamente. La alternativa era una ruta propia (`POST /sessions/:id/players/:playerId/report`), pero dejaba a `audience: "player"` sin un significado claro.
+Se mantiene un único endpoint porque el challenge pide `audience` en él; el servicio separa los dos flujos. Una ruta propia (`POST /sessions/:id/players/:playerId/report`) dejaba a `audience: "player"` sin un significado claro.
 
-El informe individual no compara al jugador con sus compañeros: el modelo no recibe sus datos. Los aspectos a mejorar son opcionales porque, sin historial ni objetivos individuales, a veces no hay con qué fundamentarlos (un reporte de evolución entre sesiones sería la base para eso).
+El informe individual no puede comparar al jugador con sus compañeros porque el modelo no recibe sus datos. Los aspectos a mejorar son opcionales: sin historial ni objetivos individuales, a veces no hay con qué fundamentarlos.
 
 ### Modelo elegido: Gemini 3.1 Flash-Lite
 
-Elegí Gemini porque permite solicitar respuestas estructuradas mediante JSON Schema en su tier gratuito. En las pruebas, `gemini-3.1-flash-lite` ofreció una respuesta suficientemente rápida y estable para este caso.
-
-El modelo no calcula métricas ni determina alertas: recibe información previamente procesada por el backend y se encarga de redactar el reporte. Se configuró una temperatura de `0.3` para priorizar respuestas consistentes y basadas en los datos.
-
-El modelo se puede cambiar mediante `GEMINI_MODEL`, sin modificar el código.
+Elegí Gemini porque permite pedir respuestas estructuradas con JSON Schema en su tier gratuito, y en las pruebas `gemini-3.1-flash-lite` fue rápido y estable. El modelo solo redacta: no calcula métricas ni decide alertas. Uso temperatura `0.3` para priorizar respuestas consistentes, y el modelo se cambia con `GEMINI_MODEL`.
 
 ### Contexto que recibe el modelo
 
@@ -290,34 +266,29 @@ Antes de llamar a Gemini, el backend prepara la información necesaria en `domai
 - Datos faltantes identificados explícitamente, para que un `null` no se interprete como cero.
 - Identificación de jugadores mediante `player_id`, sin enviar sus nombres al modelo.
 
-Para el informe individual se usa la misma función: las métricas se piden ya filtradas por `player_id` (`getSessionMetrics`), así que el contexto solo contiene a ese jugador, sus alertas y sus datos faltantes.
+El informe individual usa la misma función con las métricas ya filtradas por `player_id`: el contexto solo tiene a ese jugador, sus alertas y sus datos faltantes.
 
 ### Cómo se evita mostrar datos inventados
 
-La integración combina salida estructurada y validaciones posteriores. La respuesta del modelo no se considera confiable solo por haber solicitado un JSON con un esquema.
+Pedir un JSON con esquema no alcanza: la respuesta se valida después de recibirla.
 
-1. **Estructura:** Gemini recibe un esquema JSON. La respuesta se vuelve a validar con Zod; el esquema se define una sola vez en Zod y se convierte a JSON Schema para el modelo.
-2. **Jugadores:** se descartan los `player_id` que no pertenecen a la sesión y los comentarios de alerta asociados a jugadores que no tienen una alerta calculada. Si quedan menos de dos destacados, se rechaza la respuesta.
-3. **Números:** cada número mencionado en los textos debe existir en los datos de la sesión. Si no existe, se rechaza la respuesta.
-4. **Datos confiables:** nombres, métricas y alertas se completan desde la base de datos. La IA aporta los comentarios, pero no decide qué jugadores tienen alertas. Si el modelo omite una alerta, igualmente se incluye en el reporte.
+1. **Estructura:** el esquema se define una vez en Zod, se convierte a JSON Schema para Gemini y se usa de nuevo para validar la respuesta.
+2. **Jugadores:** se descartan los `player_id` que no están en la sesión y los comentarios de alerta de jugadores sin alerta calculada. Si quedan menos de dos destacados, se rechaza la respuesta.
+3. **Números:** cada número de los textos tiene que existir en los datos que recibió el modelo; si no, se rechaza. En el informe individual eso incluye los números de los compañeros, porque no están en su contexto.
+4. **Datos de la base:** nombres, métricas y alertas se completan desde la base. Si el modelo omite una alerta, igual aparece en el reporte.
+5. **Positivos sobre métricas con alerta (individual):** cada positivo declara la métrica en la que se apoya, y si esa métrica tiene alerta se descarta: superar un umbral es algo a cuidar, no un logro. Si no queda ninguno, se rechaza. Lo agregué porque en las pruebas el modelo felicitó a un jugador por una distancia con alerta aunque el prompt lo prohibía.
 
-En el informe individual, además:
-
-- **Números:** como el contexto solo tiene los datos del jugador, un número de un compañero no existe en él y la respuesta se rechaza.
-- **Positivos sobre métricas con alerta:** cada punto positivo declara la métrica en la que se apoya. Si esa métrica tiene una alerta, el positivo se descarta: una carga o una distancia por encima del umbral se trata como algo a cuidar, no como un logro. Si no queda ningún positivo válido, se rechaza la respuesta. Lo agregué después de que, en las pruebas, el modelo felicitara a un jugador por una distancia que tenía alerta: la regla estaba en el prompt, pero el prompt no alcanzaba.
-- **Comentario de alerta:** si el jugador no tiene alertas calculadas, el comentario se descarta.
-
-**Límite de esta validación:** el control de números es estricto. Por ejemplo, un porcentaje calculado correctamente pero que no exista como valor en los datos puede provocar el rechazo del reporte. Además, no se pueden verificar completamente afirmaciones cualitativas como “la mayor distancia del equipo” o “más de lo habitual”, ni que un positivo hable realmente de la métrica que declara. Por eso, los niveles de alerta que ve el usuario siempre provienen de los cálculos del backend y no del texto generado.
+**Límites:** el control de números es estricto (un porcentaje bien calculado pero ausente de los datos provoca un rechazo), y no se pueden verificar afirmaciones cualitativas como “la mayor distancia del equipo”, ni que un positivo hable de la métrica que declara. Por eso los niveles de alerta que se muestran siempre salen del backend, no del texto generado.
 
 ### Prompts versionados
 
-Los prompts están en módulos propios dentro de `backend/src/prompts/`. Hay uno por tipo de informe, cada uno con su versión (`PROMPT_VERSION`) y su esquema de respuesta: `sessionReport.v3.js` (colectivo) y `playerReport.v1.js` (individual). En el repo quedan solo los prompts en uso; las versiones anteriores se pueden ver en el historial de git:
+Hay un prompt por tipo de informe en `backend/src/prompts/`, cada uno con su versión (`PROMPT_VERSION`) y su esquema: `sessionReport.v3.js` y `playerReport.v1.js`. En el repo quedan solo los prompts en uso; las versiones anteriores están en el historial de git:
 
-- **v1:** un solo prompt, con una frase de tono por destinatario. Los reportes casi no se diferenciaban.
+- **v1:** una frase de tono por destinatario; los reportes casi no se diferenciaban.
 - **v2:** instrucciones concretas por destinatario, pero `player` seguía siendo un informe colectivo.
-- **v3 + playerReport.v1:** el colectivo conserva las instrucciones de v2 para el cuerpo técnico; el informe para el jugador pasa a ser individual, con su propio prompt.
+- **v3 + playerReport.v1:** el colectivo conserva las instrucciones de v2 para el cuerpo técnico y el del jugador pasa a ser individual.
 
-Cada reporte informa qué versión de prompt y qué modelo se utilizaron. Esa información se muestra en la interfaz como tooltip sobre la fecha de generación.
+Cada reporte informa con qué prompt y modelo se generó (tooltip sobre la fecha de generación).
 
 ### Manejo de errores
 
@@ -326,7 +297,7 @@ Cada reporte informa qué versión de prompt y qué modelo se utilizaron. Esa in
 - **Respuesta inválida o error del proveedor:** devuelve `502`.
 - **Proveedor no disponible:** si falta la API key o el proveedor continúa saturado después del reintento, devuelve `503`.
 
-La selección del proveedor se realiza mediante `AI_PROVIDER`. El timeout, los reintentos y el mapeo de errores son compartidos; para sumar otro proveedor se necesita implementar un cliente con la misma interfaz.
+El proveedor se elige con `AI_PROVIDER`. Timeout, reintentos y mapeo de errores son comunes; sumar otro proveedor es implementar un cliente con la misma interfaz.
 
 ---
 
@@ -340,32 +311,26 @@ La selección del proveedor se realiza mediante `AI_PROVIDER`. El timeout, los r
 
 ### Alertas calculadas en el backend
 
-Las alertas se calculan en `domain/alerts.js`; no se delegan al modelo. El backend es la única fuente para la tabla, el gráfico y el reporte, mientras que el frontend se ocupa de mostrarlas.
+Las alertas se calculan en `domain/alerts.js`, no en el modelo, y son la única fuente para la tabla, el gráfico y el reporte.
 
-El enunciado habla de superar el umbral. Tomé la decisión de generar una alerta cuando el valor **alcanza o supera** el umbral (`>=`). Por ejemplo, un RPE de 8 con un umbral de 8 genera una alerta. En el contexto de carga física me pareció más prudente avisar también al alcanzar el límite. Si se quisiera cambiar el criterio, está centralizado en `domain/alerts.js`.
-
-Cuando un valor alcanza el nivel `critical`, se muestra como crítico y no se duplica como warning.
+El enunciado habla de superar el umbral; decidí alertar cuando el valor **alcanza o supera** el umbral (`>=`), porque en carga física es más prudente avisar también al llegar al límite (un RPE de 8 con umbral 8 alerta). Un valor crítico se muestra solo como crítico, sin duplicarse como warning.
 
 ### Caché de reportes (bonus)
 
-La caché guarda reportes generados para evitar volver a consultar al modelo cuando se repiten los mismos parámetros.
+La caché evita volver a llamar al modelo con los mismos parámetros (milisegundos en lugar de segundos).
 
-- **Clave:** sesión + jugador + idioma + destinatario + versión del prompt + modelo.
-- **Informe colectivo:** se guarda con `player_id = 0`. No uso `NULL` a propósito: en SQLite dos `NULL` no son iguales dentro de una clave, así que `INSERT OR REPLACE` no reemplazaría la fila anterior (se acumularían duplicados) y la búsqueda con `player_id = NULL` nunca la encontraría. Con `0` y la columna `NOT NULL`, cada combinación tiene una sola fila. Un test lo verifica regenerando ambos tipos de informe.
-- **Contenido:** se guarda la respuesta cruda del modelo y se vuelve a validar en cada uso contra los datos actuales.
-- **Seguridad de los datos:** solo se almacena una respuesta que superó las validaciones. Los nombres y las métricas se completan desde la base.
-- **Regeneración:** `refresh: true` ignora la caché y genera un reporte nuevo.
-
-Incluir la versión del prompt y el modelo en la clave evita reutilizar reportes generados con instrucciones o modelos diferentes. Si una fila guardada ya no supera la validación (por ejemplo, porque cambió el formato de la respuesta), se descarta y se genera un reporte nuevo. Cuando se utiliza la caché, la respuesta se obtiene en pocos milisegundos, frente a los segundos que puede tardar una llamada al modelo.
+- **Clave:** sesión + jugador + idioma + destinatario + versión del prompt + modelo. Si cambia el prompt o el modelo, no se reutilizan reportes viejos.
+- **Informe colectivo:** usa `player_id = 0`, no `NULL`: en SQLite dos `NULL` no son iguales dentro de una clave, así que `INSERT OR REPLACE` acumularía duplicados.
+- **Contenido:** solo la respuesta cruda del modelo que ya pasó las validaciones. Se vuelve a validar en cada uso contra los datos actuales; si ya no pasa, se genera un reporte nuevo.
+- **Regeneración:** `refresh: true` ignora la caché.
 
 ### Decisiones de frontend y experiencia de uso
 
-- **Ordenamiento local:** la tabla tiene 12 filas, por lo que el ordenamiento se realiza en el navegador y evita una request por cada clic. La API igualmente soporta `order_by`, tal como pide el challenge.
-- **Proxy de Vite:** se utiliza para mantener un único origen desde el navegador, sin agregar configuración de CORS.
-- **Layout adaptable:** el reporte se muestra al costado de los datos solo cuando hay espacio suficiente para que la tabla entre completa; de lo contrario, se ubica debajo. La decisión se resuelve con una container query, que responde al espacio disponible y no solamente al tamaño de la ventana. El dashboard está pensado para usarse en computadora.
-- **Jerarquía visual:** la tabla y las métricas son el foco principal. El reporte tiene un tratamiento visual diferenciado y los estados de alerta se identifican con color, ícono y texto.
-- **Datos legibles:** los números están alineados a la derecha y las columnas de jugador y número permanecen fijas al desplazarse horizontalmente.
-- **Reporte como informe:** el colectivo se organiza en resumen, destacados, alertas y datos faltantes; el individual, en jugador, resumen, puntos positivos, aspectos a mejorar (solo si los hay), alertas y datos faltantes. Al elegir el destinatario "Jugador" aparece un selector de jugador, y el botón queda deshabilitado hasta elegir uno. El formato, el idioma y "Regenerar" dependen del informe recibido, no de los selectores, que pueden haber cambiado después. Los nombres y el título de la sesión se mantienen como están en la base.
+- **Ordenamiento local:** con 12 filas, la tabla se ordena en el navegador y evita una request por clic. La API igual soporta `order_by`, como pide el challenge.
+- **Proxy de Vite:** un único origen desde el navegador, sin configurar CORS.
+- **Layout adaptable:** el reporte va al costado de los datos solo si la tabla entra completa; si no, debajo. Se resuelve con una container query, que responde al espacio disponible y no al tamaño de la ventana. Pensado para computadora.
+- **Jerarquía visual:** la tabla y las métricas son el foco; las alertas se identifican con color, ícono y texto.
+- **Reporte:** al elegir el destinatario "Jugador" aparece un selector de jugador y el botón se habilita al elegir uno. El formato, el idioma y "Regenerar" dependen del informe recibido, no de los selectores, que pueden haber cambiado después.
 
 ---
 
@@ -375,11 +340,11 @@ Incluir la versión del prompt y el modelo en la clave evita reutilizar reportes
 - Ampliar los tests de integración al resto de los endpoints (hoy cubren la validación del body y el servicio de reportes con su caché).
 - Incorporar tests del frontend para el ordenamiento, las alertas, los resúmenes y los estados del reporte.
 - Evitar llamadas duplicadas al modelo cuando llegan solicitudes iguales en simultáneo.
-- Implementar un reporte de evolución de un jugador a lo largo de las sesiones: le daría al informe individual una referencia propia (el jugador contra sí mismo) para fundamentar los aspectos a mejorar.
-- Mejorar la representación de los valores faltantes directamente en el gráfico.
-- Profundizar la validación semántica de los textos para detectar afirmaciones cualitativas que no se puedan respaldar con los datos.
+- Un reporte de evolución del jugador entre sesiones, que le daría al informe individual una referencia propia para los aspectos a mejorar.
+- Mostrar los valores faltantes directamente en el gráfico.
+- Validar mejor las afirmaciones cualitativas de los textos.
 
-No implementé streaming con SSE. El reporte se valida completo antes de mostrarse; con streaming, el usuario podría empezar a leer contenido que todavía no pasó las validaciones. Para este caso prioricé la confiabilidad de la información por encima de la velocidad percibida.
+No implementé streaming con SSE: el reporte se valida completo antes de mostrarse, y con streaming se leería contenido que todavía no pasó las validaciones.
 
 ---
 
@@ -406,4 +371,22 @@ feat(ui): estilo compacto de tabla y gráfico
 fix: corregir validación de reporte
 test: agregar casos de datos incompletos
 docs: actualizar README
+chore: reducir el alto del selector de sesión
 ```
+
+
+---
+
+## Capturas
+
+Resumen de la sesión y tabla de métricas, con los valores que alcanzan un umbral resaltados:
+
+<p align="center">
+  <img src="docs/images/dashboard-metricas.png" alt="Resumen de la sesión y tabla de métricas por jugador" width="800">
+</p>
+
+Gráfico por jugador con la línea del umbral y panel del reporte con IA:
+
+<p align="center">
+  <img src="docs/images/dashboard-grafico-reporte.png" alt="Gráfico de distancia por jugador y panel del reporte con IA" width="800">
+</p>
