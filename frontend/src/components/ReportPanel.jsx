@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { generateReport } from '../api/client.js';
-import { LEVELS, metricLabel, levelLabel, formatValue, formatDate, shortName } from '../metrics.js';
-import { ChartIcon, StarIcon, FlagIcon, InfoIcon } from './icons.jsx';
+import {
+  LEVELS, metricLabel, levelLabel, formatValue, formatDate, shortName, byShirtNumber,
+} from '../metrics.js';
+import { ChartIcon, StarIcon, FlagIcon, InfoIcon, TrendUpIcon } from './icons.jsx';
 
 // Textos fijos del informe. El informe se muestra entero en el idioma en que se
 // generó; los controles del panel siguen en español, como el resto de la app.
@@ -10,24 +12,32 @@ const REPORT_TEXT = {
   es: {
     locale: 'es-AR',
     title: 'Informe de análisis de sesión',
-    audience: { coach: 'Para el cuerpo técnico', player: 'Para los jugadores' },
+    audience: { coach: 'Para el cuerpo técnico', player: 'Informe individual del jugador' },
     summary: 'Resumen',
     highlights: 'Destacados',
+    positives: 'Puntos positivos',
+    improvements: 'Aspectos a mejorar',
     alerts: 'Alertas',
     missing: 'Sin dato',
     lowMinutes: 'pocos min.',
+    minutes: 'min',
     noAlerts: 'Ningún jugador alcanzó los umbrales en esta sesión.',
+    noPlayerAlerts: 'Sin alertas en esta sesión.',
   },
   en: {
     locale: 'en-US',
     title: 'Session analysis report',
-    audience: { coach: 'For the coaching staff', player: 'For the players' },
+    audience: { coach: 'For the coaching staff', player: 'Individual player report' },
     summary: 'Summary',
     highlights: 'Highlights',
+    positives: 'Strengths',
+    improvements: 'Areas to improve',
     alerts: 'Alerts',
     missing: 'Missing data',
     lowMinutes: 'low minutes',
+    minutes: 'min',
     noAlerts: 'No player reached the thresholds in this session.',
+    noPlayerAlerts: 'No alerts in this session.',
   },
 };
 
@@ -87,10 +97,10 @@ function ReportSection({ title, icon, children }) {
   );
 }
 
-function ReportContent({ session, report, onRegenerate, onClose }) {
+// Encabezado y pie comunes a los dos informes (colectivo e individual).
+// El destinatario es con el que se generó: el selector puede haber cambiado después.
+function ReportFrame({ session, report, onRegenerate, onClose, children }) {
   const text = REPORT_TEXT[report.language];
-  // Un jugador puede tener varias métricas sin dato: se agrupan en una sola línea.
-  const missingByPlayer = Map.groupBy(report.missing_data, (m) => m.player_id);
 
   return (
     <article className="report" lang={report.language}>
@@ -103,10 +113,32 @@ function ReportContent({ session, report, onRegenerate, onClose }) {
           {text.title}
         </p>
         <p><strong>{session.title}</strong> · {formatSessionDate(session.date, report.language)}</p>
-        {/* Destinatario con el que se generó: el selector puede haber cambiado después. */}
         <p>{text.audience[report.audience]}</p>
       </header>
 
+      {children}
+
+      <footer className="report-footer">
+        <span title={`${report.model} · prompt ${report.prompt_version}`}>
+          {formatGeneratedAt(report.created_at, report.language)}.
+        </span>
+        <div className="report-actions">
+          <button type="button" className="secondary" onClick={onClose}>Cerrar</button>
+          <button type="button" className="secondary" onClick={onRegenerate}>Regenerar</button>
+        </div>
+      </footer>
+    </article>
+  );
+}
+
+// Informe colectivo para el cuerpo técnico.
+function TeamReport({ report }) {
+  const text = REPORT_TEXT[report.language];
+  // Un jugador puede tener varias métricas sin dato: se agrupan en una sola línea.
+  const missingByPlayer = Map.groupBy(report.missing_data, (m) => m.player_id);
+
+  return (
+    <>
       <div className="report-summary">
         <h3 className="report-heading"><ChartIcon />{text.summary}</h3>
         <p>{report.summary}</p>
@@ -153,37 +185,94 @@ function ReportContent({ session, report, onRegenerate, onClose }) {
           </ul>
         </ReportSection>
       )}
+    </>
+  );
+}
 
-      <footer className="report-footer">
-        <span title={`${report.model} · prompt ${report.prompt_version}`}>
-          {formatGeneratedAt(report.created_at, report.language)}.
-        </span>
-        <div className="report-actions">
-          <button type="button" className="secondary" onClick={onClose}>Cerrar</button>
-          <button type="button" className="secondary" onClick={onRegenerate}>Regenerar</button>
-        </div>
-      </footer>
-    </article>
+// Informe individual: solo los datos del jugador. Identidad, alertas y datos
+// faltantes vienen de la base; resumen, positivos y mejoras, del modelo.
+function PlayerReport({ report }) {
+  const text = REPORT_TEXT[report.language];
+  const { player } = report;
+
+  return (
+    <>
+      {/* Nombre completo: es el único jugador del informe (no hace falta abreviar). */}
+      <p className="report-player-line">
+        <strong className="report-player">#{player.shirt_number} {player.name}</strong>
+        {player.position} · {player.minutes_played} {text.minutes}
+        {player.low_minutes && <span className="cell-note">{text.lowMinutes}</span>}
+      </p>
+
+      <div className="report-summary">
+        <h3 className="report-heading"><ChartIcon />{text.summary}</h3>
+        <p>{report.summary}</p>
+      </div>
+
+      <ReportSection title={text.positives} icon={<StarIcon />}>
+        {/* Siempre hay al menos uno: el backend rechaza un informe sin positivos. */}
+        <ul className="report-list">
+          {/* Listas fijas (no se reordenan): el índice alcanza como key. */}
+          {report.positives.map((p, i) => <li key={i}>{p.text}</li>)}
+        </ul>
+      </ReportSection>
+
+      {/* Son opcionales (0 a 2): sin fundamento en los datos, la sección no aparece. */}
+      {report.improvements.length > 0 && (
+        <ReportSection title={text.improvements} icon={<TrendUpIcon />}>
+          <ul className="report-list">
+            {report.improvements.map((item, i) => <li key={i}>{item}</li>)}
+          </ul>
+        </ReportSection>
+      )}
+
+      <ReportSection title={text.alerts} icon={<FlagIcon />}>
+        {report.alerts.length === 0 ? (
+          <p className="empty">{text.noPlayerAlerts}</p>
+        ) : (
+          <ul className="report-list">
+            <li>
+              <AlertLevels items={report.alerts} language={report.language} locale={text.locale} />
+              {report.alert_comment && <p className="report-comment">{report.alert_comment}</p>}
+            </li>
+          </ul>
+        )}
+      </ReportSection>
+
+      {report.missing_data.length > 0 && (
+        <ReportSection title={text.missing} icon={<InfoIcon />}>
+          <p>{report.missing_data.map((metric) => metricLabel(metric, report.language)).join(', ')}</p>
+        </ReportSection>
+      )}
+    </>
   );
 }
 
 // El padre le pasa key={session.id}: al cambiar de sesión el panel se
 // monta de nuevo y vuelve al estado inicial, sin lógica extra.
-export default function ReportPanel({ session }) {
+export default function ReportPanel({ session, players }) {
   const [language, setLanguage] = useState('es');
   const [audience, setAudience] = useState('coach');
+  const [playerId, setPlayerId] = useState(''); // '' = ningún jugador elegido
   const [status, setStatus] = useState('idle'); // idle | loading | error | done
   const [report, setReport] = useState(null);
   const [error, setError] = useState(null);
 
+  const isPlayerReport = audience === 'player';
+  // El informe individual necesita un jugador; el colectivo, no.
+  const needsPlayer = isPlayerReport && playerId === '';
+  const canGenerate = status !== 'loading' && !needsPlayer;
+
   // Si ya hay un reporte guardado para estos parámetros, el backend lo
   // devuelve sin llamar a la IA. refresh = true fuerza uno nuevo.
-  async function handleGenerate(refresh = false) {
+  // "Regenerar" usa los parámetros del informe en pantalla, no los selectores,
+  // que pueden haber cambiado después de generarlo.
+  async function handleGenerate(params, refresh = false) {
     setStatus('loading');
     try {
-      // El backend devuelve con qué idioma se generó (report.language): el
-      // informe se muestra en ese idioma aunque el selector cambie después.
-      setReport(await generateReport(session.id, { language, audience, refresh }));
+      // El backend devuelve con qué idioma y destinatario se generó: el informe
+      // se muestra así aunque los selectores cambien después.
+      setReport(await generateReport(session.id, { ...params, refresh }));
       setStatus('done');
     } catch (err) {
       setError(err.message);
@@ -212,14 +301,29 @@ export default function ReportPanel({ session }) {
           Destinatario
           <select value={audience} onChange={(e) => setAudience(e.target.value)}>
             <option value="coach">Cuerpo técnico</option>
-            <option value="player">Jugadores</option>
+            <option value="player">Jugador (individual)</option>
           </select>
         </label>
+        {isPlayerReport && (
+          <label className="field">
+            Jugador
+            <select value={playerId} onChange={(e) => setPlayerId(e.target.value)}>
+              <option value="" disabled>Elegí un jugador</option>
+              {players.toSorted(byShirtNumber).map((p) => (
+                <option key={p.player_id} value={p.player_id}>#{p.shirt_number} {p.name}</option>
+              ))}
+            </select>
+          </label>
+        )}
         <button
           type="button"
           className="primary"
-          onClick={() => handleGenerate()}
-          disabled={status === 'loading'}
+          onClick={() => handleGenerate({
+            language,
+            audience,
+            playerId: isPlayerReport ? Number(playerId) : undefined,
+          })}
+          disabled={!canGenerate}
         >
           {status === 'loading' ? 'Generando…' : 'Generar reporte'}
         </button>
@@ -227,8 +331,9 @@ export default function ReportPanel({ session }) {
 
       {status === 'idle' && (
         <p className="empty">
-          Elegí idioma y destinatario, y tocá "Generar reporte". Si ya se generó
-          antes con esas opciones, aparece al instante.
+          {needsPlayer
+            ?'Elegí el jugador para generar su informe individual.'
+            : 'Elegí idioma y destinatario, y tocá "Generar reporte". Si ya se generó antes con esas opciones, aparece al instante.'}
         </p>
       )}
       {status === 'loading' && (
@@ -237,13 +342,20 @@ export default function ReportPanel({ session }) {
       {status === 'error' && (
         <p className="error" role="alert">No se pudo generar el reporte: {error}</p>
       )}
+      {/* El formato depende del informe recibido (report.audience), no del selector. */}
       {status === 'done' && (
-        <ReportContent
+        <ReportFrame
           session={session}
           report={report}
-          onRegenerate={() => handleGenerate(true)}
+          onRegenerate={() => handleGenerate({
+            language: report.language,
+            audience: report.audience,
+            playerId: report.player?.player_id,
+          }, true)}
           onClose={handleClose}
-        />
+        >
+          {report.audience === 'player' ? <PlayerReport report={report} /> : <TeamReport report={report} />}
+        </ReportFrame>
       )}
     </div>
   );

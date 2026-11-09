@@ -75,6 +75,15 @@ export function FlagIcon() {
   );
 }
 
+export function TrendUpIcon() {
+  return (
+    <Icon>
+      <path d="m3 17 6-6 4 4 8-8" />
+      <path d="M15 7h6v6" />
+    </Icon>
+  );
+}
+
 export function ClockIcon() {
   return (
     <Icon>

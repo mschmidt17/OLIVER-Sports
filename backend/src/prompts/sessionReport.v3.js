@@ -1,27 +1,19 @@
-// Prompt del reporte de sesión, versión 1.
-// Si cambian las instrucciones o el formato de salida, se crea sessionReport.v2.js
-// en lugar de editar este archivo: así cada reporte se puede rastrear a su prompt.
+// Prompt del reporte de sesión, versión 3: informe colectivo para el cuerpo técnico.
+// Cambio respecto de v2 (en el historial de git): se quita la rama para jugadores,
+// que pasó a ser un informe individual con su propio prompt (playerReport.v1.js).
+// Las instrucciones para el cuerpo técnico son las mismas de v2.
+// Si vuelve a cambiar, se crea sessionReport.v4.js y se borra este archivo.
 import { z } from 'zod';
 
-export const PROMPT_VERSION = 'session-report-v1';
+export const PROMPT_VERSION = 'session-report-v3';
 
 const LANGUAGE_INSTRUCTIONS = {
   es: 'Escribí todo el reporte en español.',
   en: 'Write the entire report in English.',
 };
 
-const AUDIENCE_INSTRUCTIONS = {
-  coach:
-    'El lector es el cuerpo técnico: usá un tono profesional y concreto, ' +
-    'con foco en la gestión de la carga y en qué mirar en la próxima sesión.',
-  player:
-    'El lector es el plantel: usá lenguaje simple y motivador, sin jerga técnica. ' +
-    'Las alertas se comentan como cuidado y recuperación, sin tono alarmista.',
-};
-
-// Valores aceptados por la API; la ruta los valida contra estas listas.
+// Valores aceptados por la API; la ruta los valida contra esta lista.
 export const LANGUAGES = Object.keys(LANGUAGE_INSTRUCTIONS);
-export const AUDIENCES = Object.keys(AUDIENCE_INSTRUCTIONS);
 
 const BASE_INSTRUCTIONS = `
 Sos analista de rendimiento físico de un equipo de fútbol.
@@ -58,7 +50,16 @@ Reglas obligatorias:
    Si es relevante, mencioná que falta el dato.
 8. No uses nombres de campos del JSON en los textos (por ejemplo low_minutes,
    per_minute o workload_au): explicalos con palabras, como "jugó pocos
-   minutos" o "carga de trabajo".
+   minutos".
+`.trim();
+
+const COACH_INSTRUCTIONS = `
+Destinatario: el cuerpo técnico (entrenador y preparador físico).
+- Tono profesional y técnico: podés usar términos como umbral, carga de trabajo,
+  esfuerzo percibido (RPE) o carrera a alta velocidad.
+- summary: cerrá con qué conviene mirar o ajustar en la próxima sesión.
+- alerts: en cada comentario sugerí una acción concreta para el cuerpo técnico
+  (por ejemplo, reducir la carga del jugador o controlar su recuperación).
 `.trim();
 
 // Formato de salida: se define una sola vez, con Zod, y se usa dos veces.
@@ -79,11 +80,11 @@ const responseJsonSchema = z.toJSONSchema(reportSchema);
  * Arma el pedido para el modelo a partir del contexto de buildContext.
  * Devuelve las instrucciones de sistema, el mensaje con los datos y el esquema.
  */
-export function buildSessionReportPrompt(context, { language, audience }) {
+export function buildSessionReportPrompt(context, { language }) {
   const systemInstruction = [
     BASE_INSTRUCTIONS,
     LANGUAGE_INSTRUCTIONS[language],
-    AUDIENCE_INSTRUCTIONS[audience],
+    COACH_INSTRUCTIONS,
   ].join('\n\n');
 
   return {

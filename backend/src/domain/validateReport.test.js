@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import data from '../../session_data.json' with { type: 'json' };
 import { buildContext } from './buildContext.js';
-import { validateReport, InvalidReportError } from './validateReport.js';
-import { reportSchema } from '../prompts/sessionReport.v2.js';
+import { validateReport, validatePlayerReport, InvalidReportError } from './validateReport.js';
+import { reportSchema } from '../prompts/sessionReport.v3.js';
+import { playerReportSchema } from '../prompts/playerReport.v1.js';
 
 // Contexto real de la sesión 103: jugadores 1 a 12; alertas para 1, 2, 5, 6 y 10.
 const session = data.sessions.find((s) => s.id === 103);
@@ -143,5 +144,125 @@ describe('validateReport: números que no existen', () => {
   it('acepta decimales de los datos (velocidad máxima 31.6 km/h)', () => {
     const raw = modelResponse({ summary: 'La velocidad máxima fue de 31,6 km/h.' });
     expect(() => validate(raw)).not.toThrow();
+  });
+});
+
+// Informe individual: contexto de la sesión 103 con un solo jugador, como lo
+// arma el service con las métricas ya filtradas por player_id.
+function playerContext(playerId) {
+  return buildContext({
+    session,
+    players: session.player_sessions.filter((p) => p.player_id === playerId),
+    thresholds: data.thresholds,
+  });
+}
+
+function positive(metric, text) {
+  return { metric, text };
+}
+
+function validatePlayer(playerId, overrides = {}) {
+  const raw = JSON.stringify({
+    summary: 'Hiciste una sesión completa de 90 minutos.',
+    positives: [positive('max_speed_kmh', 'Llegaste a una buena velocidad máxima.')],
+    improvements: [],
+    alert_comment: null,
+    ...overrides,
+  });
+  return validatePlayerReport(raw, playerContext(playerId), playerReportSchema);
+}
+
+describe('validatePlayerReport: formato', () => {
+  it('acepta un informe completo (jugador 5: positivos, mejoras y alerta)', () => {
+    const report = validatePlayer(5, {
+      positives: [positive('accelerations', 'Hiciste 58 aceleraciones.')],
+      improvements: ['Podés sumar más sprints en la próxima sesión.'],
+      alert_comment: 'Sentiste un esfuerzo muy alto: descansá bien.',
+    });
+    expect(report).toEqual({
+      summary: 'Hiciste una sesión completa de 90 minutos.',
+      positives: [positive('accelerations', 'Hiciste 58 aceleraciones.')],
+      improvements: ['Podés sumar más sprints en la próxima sesión.'],
+      alertComment: 'Sentiste un esfuerzo muy alto: descansá bien.',
+    });
+  });
+
+  it('sin aspectos a mejorar es válido (0 a 2)', () => {
+    expect(validatePlayer(7).improvements).toEqual([]);
+  });
+
+  it('sin puntos positivos -> InvalidReportError', () => {
+    expect(() => validatePlayer(7, { positives: [] })).toThrow(InvalidReportError);
+  });
+
+  it('más de 3 positivos o más de 2 mejoras -> InvalidReportError', () => {
+    const fourPositives = ['a', 'b', 'c', 'd'].map((text) => positive('sprints', text));
+    expect(() => validatePlayer(7, { positives: fourPositives })).toThrow(InvalidReportError);
+    expect(() => validatePlayer(7, { improvements: ['a', 'b', 'c'] })).toThrow(InvalidReportError);
+  });
+
+  it('positivo con una métrica que no existe -> InvalidReportError', () => {
+    const raw = { positives: [positive('goles', 'Hiciste goles.')] };
+    expect(() => validatePlayer(7, raw)).toThrow(InvalidReportError);
+  });
+
+  it('falta alert_comment -> InvalidReportError (debe venir, aunque sea null)', () => {
+    const raw = JSON.stringify({
+      summary: 'Bien.', positives: [positive('sprints', 'Bien.')], improvements: [],
+    });
+    expect(() => validatePlayerReport(raw, playerContext(7), playerReportSchema))
+      .toThrow(InvalidReportError);
+  });
+});
+
+describe('validatePlayerReport: alertas', () => {
+  it('jugador sin alertas (7): descarta el comentario de alerta inventado', () => {
+    const report = validatePlayer(7, { alert_comment: 'Cuidado con el esfuerzo.' });
+    expect(report.alertComment).toBeNull();
+  });
+
+  it('jugador con alertas (5): conserva el comentario', () => {
+    const report = validatePlayer(5, { alert_comment: 'Descansá y avisá si sentís molestias.' });
+    expect(report.alertComment).toBe('Descansá y avisá si sentís molestias.');
+  });
+
+  it('descarta un positivo sobre una métrica con alerta (jugador 5: distancia)', () => {
+    const report = validatePlayer(5, {
+      positives: [
+        positive('total_distance_m', 'Recorriste 10488 metros.'),
+        positive('accelerations', 'Hiciste 58 aceleraciones.'),
+      ],
+    });
+    expect(report.positives).toEqual([positive('accelerations', 'Hiciste 58 aceleraciones.')]);
+  });
+
+  it('si todos los positivos tenían alerta -> InvalidReportError', () => {
+    const raw = { positives: [positive('workload_au', 'Trabajaste mucho.')] };
+    expect(() => validatePlayer(5, raw)).toThrow(/puntos positivos válidos/);
+  });
+});
+
+describe('validatePlayerReport: números', () => {
+  it('acepta números de sus propios datos (jugador 11: 28 minutos, 76 m por minuto)', () => {
+    expect(() => validatePlayer(11, {
+      summary: 'Jugaste 28 minutos.',
+      positives: [positive('total_distance_m', 'Mantuviste un ritmo de 76 metros por minuto.')],
+    })).not.toThrow();
+  });
+
+  it('rechaza un número de un compañero: el contexto solo tiene al jugador', () => {
+    // 10488 es la distancia del jugador 5, no del 7.
+    const raw = { positives: [positive('total_distance_m', 'Recorriste 10488 metros.')] };
+    expect(() => validatePlayer(7, raw)).toThrow(/10488/);
+  });
+
+  it('rechaza un número inventado en un aspecto a mejorar', () => {
+    expect(() => validatePlayer(7, { improvements: ['Intentá llegar a 15 sprints.'] }))
+      .toThrow(/15/);
+  });
+
+  it('no valida números de un comentario de alerta descartado', () => {
+    // El jugador 7 no tiene alertas: el comentario se descarta antes de revisarlo.
+    expect(validatePlayer(7, { alert_comment: 'Tomá 37 litros de agua.' }).alertComment).toBeNull();
   });
 });

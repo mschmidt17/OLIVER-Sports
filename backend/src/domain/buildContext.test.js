@@ -92,3 +92,34 @@ describe('isLowMinutes', () => {
     expect(isLowMinutes(null, 90)).toBe(false); // sin dato no es "pocos minutos"
   });
 });
+
+describe('buildContext con un solo jugador (informe individual)', () => {
+  // Así lo arma el service: métricas filtradas por player_id antes de buildContext.
+  function playerContextFor(sessionId, playerId) {
+    const input = inputFor(sessionId);
+    return buildContext({ ...input, players: input.players.filter((p) => p.player_id === playerId) });
+  }
+
+  it('solo incluye al jugador, sus alertas y sus datos faltantes', () => {
+    const context = playerContextFor(103, 5);
+    expect(context.players.map((p) => p.player_id)).toEqual([5]);
+    expect(context.alerts.length).toBeGreaterThan(0);
+    expect(context.alerts.every((a) => a.player_id === 5)).toBe(true);
+    expect(context.missing_data).toEqual([]);
+  });
+
+  it('jugador sin alertas (7): alerts vacío', () => {
+    expect(playerContextFor(103, 7).alerts).toEqual([]);
+  });
+
+  it('jugador con datos faltantes (9): null en las métricas y en missing_data', () => {
+    const context = playerContextFor(103, 9);
+    expect(context.players[0].metrics.rpe).toBeNull();
+    expect(context.missing_data.map((m) => m.metric)).toEqual(['rpe', 'workload_au']);
+  });
+
+  it('no contiene números de los compañeros', () => {
+    // 10488 es la distancia del jugador 5; el contexto del 7 no la tiene.
+    expect(JSON.stringify(playerContextFor(103, 7))).not.toContain('10488');
+  });
+});

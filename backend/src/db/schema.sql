@@ -58,13 +58,17 @@ CREATE TABLE thresholds (
 -- Caché de reportes: guarda solo la respuesta del modelo, que se valida en cada uso;
 -- nombres y métricas se completan desde la base en cada pedido.
 -- Prompt y modelo son parte de la clave: si cambian, no se sirven reportes viejos.
+-- player_id: el jugador del informe individual, o 0 para el colectivo (coach).
+-- No NULL: en SQLite dos NULL no son iguales en una clave y INSERT OR REPLACE
+-- duplicaría filas. Sin REFERENCES players(id) porque 0 no es un jugador.
 CREATE TABLE reports (
   session_id     INTEGER NOT NULL REFERENCES sessions(id),
+  player_id      INTEGER NOT NULL,  -- 0 = informe colectivo
   language       TEXT NOT NULL,
   audience       TEXT NOT NULL,
   prompt_version TEXT NOT NULL,
   model          TEXT NOT NULL,
   raw_response   TEXT NOT NULL,  -- respuesta del modelo tal cual (JSON)
   created_at     TEXT NOT NULL,  -- formato ISO 8601
-  PRIMARY KEY (session_id, language, audience, prompt_version, model)
+  PRIMARY KEY (session_id, player_id, language, audience, prompt_version, model)
 );

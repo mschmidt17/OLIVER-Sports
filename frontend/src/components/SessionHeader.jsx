@@ -104,7 +104,7 @@ export default function SessionHeader({ session, players, alerts }) {
           {sessionTypeLabel(session.type)} · {formatDate(session.date)} · {session.duration_min} min
           · {players.length} jugadores
         </p>
-        <h1>{session.title}</h1>
+        <h2>{session.title}</h2>
       </div>
 
       <section className="panel summary" aria-labelledby="summary-title">

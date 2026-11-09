@@ -80,7 +80,11 @@ export default function App() {
 
                 <section className="panel">
                   <h2 className="section-title"><SparkleIcon />Reporte con IA</h2>
-                  <ReportPanel key={metrics.session.id} session={metrics.session} />
+                  <ReportPanel
+                    key={metrics.session.id}
+                    session={metrics.session}
+                    players={metrics.players}
+                  />
                 </section>
               </div>
             </>

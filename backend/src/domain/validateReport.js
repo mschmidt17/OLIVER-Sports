@@ -22,6 +22,15 @@ function parseJson(rawText) {
   }
 }
 
+// Parsea el texto del modelo y lo valida contra el esquema Zod del prompt.
+function parseWithSchema(rawText, schema) {
+  const result = schema.safeParse(parseJson(rawText));
+  if (!result.success) {
+    throw new InvalidReportError('La respuesta del modelo no tiene el formato esperado');
+  }
+  return result.data;
+}
+
 // Deja solo los elementos de jugadores permitidos y, si el modelo
 // repite un jugador, se queda con la primera aparición.
 function keepAllowedPlayers(items, allowedIds) {
@@ -58,15 +67,10 @@ function collectNumbers(value, found = new Set()) {
   return found;
 }
 
-// Lanza InvalidReportError si algún texto del reporte tiene un número
-// que no aparece en los datos de la sesión.
-function assertOnlyKnownNumbers(report, context) {
+// Lanza InvalidReportError si alguno de los textos tiene un número
+// que no aparece en el contexto que recibió el modelo.
+function assertOnlyKnownNumbers(texts, context) {
   const knownNumbers = collectNumbers(context);
-  const texts = [
-    report.summary,
-    ...report.highlights.map((h) => h.reason),
-    ...report.alertComments.map((a) => a.comment),
-  ];
 
   const unknownNumbers = texts
     .flatMap((text) => text.match(NUMBER_PATTERN) ?? [])
@@ -89,18 +93,15 @@ function assertOnlyKnownNumbers(report, context) {
  * - Comentario de alerta para un jugador sin alerta calculada -> se descarta.
  */
 export function validateReport(rawText, context, schema) {
-  const result = schema.safeParse(parseJson(rawText));
-  if (!result.success) {
-    throw new InvalidReportError('La respuesta del modelo no tiene el formato esperado');
-  }
+  const data = parseWithSchema(rawText, schema);
 
   const sessionPlayerIds = new Set(context.players.map((p) => p.player_id));
   const alertedPlayerIds = new Set(context.alerts.map((a) => a.player_id));
 
   const report = {
-    summary: result.data.summary,
-    highlights: keepAllowedPlayers(result.data.highlights, sessionPlayerIds),
-    alertComments: keepAllowedPlayers(result.data.alerts, alertedPlayerIds),
+    summary: data.summary,
+    highlights: keepAllowedPlayers(data.highlights, sessionPlayerIds),
+    alertComments: keepAllowedPlayers(data.alerts, alertedPlayerIds),
   };
 
   // El esquema cuenta los destacados antes de este descarte: si el modelo
@@ -111,6 +112,43 @@ export function validateReport(rawText, context, schema) {
     );
   }
 
-  assertOnlyKnownNumbers(report, context);
+  assertOnlyKnownNumbers([
+    report.summary,
+    ...report.highlights.map((h) => h.reason),
+    ...report.alertComments.map((a) => a.comment),
+  ], context);
+  return report;
+}
+
+/**
+ * Valida el informe individual de un jugador. `context` es el de buildContext
+ * con ese único jugador: un número de un compañero no está ahí y se rechaza.
+ * - JSON inválido o con formato incorrecto  -> InvalidReportError (502).
+ * - Un número que no existe en sus datos     -> InvalidReportError (502).
+ * - Positivo sobre una métrica con alerta    -> se descarta (no es un logro).
+ * - Ningún positivo válido tras el descarte  -> InvalidReportError (502).
+ * - Comentario de alerta sin alertas calculadas -> se descarta (queda null).
+ */
+export function validatePlayerReport(rawText, context, schema) {
+  const data = parseWithSchema(rawText, schema);
+  const alertedMetrics = new Set(context.alerts.map((a) => a.metric));
+
+  const report = {
+    summary: data.summary,
+    positives: data.positives.filter((p) => !alertedMetrics.has(p.metric)),
+    improvements: data.improvements,
+    alertComment: context.alerts.length > 0 ? data.alert_comment : null,
+  };
+
+  if (report.positives.length === 0) {
+    throw new InvalidReportError('El informe no tiene puntos positivos válidos');
+  }
+
+  assertOnlyKnownNumbers([
+    report.summary,
+    ...report.positives.map((p) => p.text),
+    ...report.improvements,
+    report.alertComment ?? '',
+  ], context);
   return report;
 }

@@ -33,10 +33,12 @@ export function getSessionMetrics(sessionId) {
   return request(`/sessions/${sessionId}/metrics`);
 }
 
-export function generateReport(sessionId, { language, audience, refresh }) {
+// playerId solo para el informe individual (audience player). Con coach queda
+// undefined y JSON.stringify lo omite: el backend rechaza player_id con coach.
+export function generateReport(sessionId, { language, audience, playerId, refresh }) {
   return request(`/sessions/${sessionId}/report`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ language, audience, refresh }),
+    body: JSON.stringify({ language, audience, player_id: playerId, refresh }),
   });
 }
