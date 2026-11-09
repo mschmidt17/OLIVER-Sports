@@ -16,7 +16,6 @@ const REPORT_TEXT = {
     alerts: 'Alertas',
     missing: 'Sin dato',
     lowMinutes: 'pocos min.',
-    noHighlights: 'El modelo no devolvió destacados válidos.',
     noAlerts: 'Ningún jugador alcanzó los umbrales en esta sesión.',
   },
   en: {
@@ -28,7 +27,6 @@ const REPORT_TEXT = {
     alerts: 'Alerts',
     missing: 'Missing data',
     lowMinutes: 'low minutes',
-    noHighlights: 'The model returned no valid highlights.',
     noAlerts: 'No player reached the thresholds in this session.',
   },
 };
@@ -115,19 +113,16 @@ function ReportContent({ session, report, onRegenerate, onClose }) {
       </div>
 
       <ReportSection title={text.highlights} icon={<StarIcon />}>
-        {report.highlights.length === 0 ? (
-          <p className="empty">{text.noHighlights}</p>
-        ) : (
-          <ul className="report-list">
-            {report.highlights.map((h) => (
-              <li key={h.player_id}>
-                <PlayerName player={h} />
-                {h.low_minutes && <span className="cell-note">{text.lowMinutes}</span>}
-                {h.reason}
-              </li>
-            ))}
-          </ul>
-        )}
+        {/* Siempre hay 2 o 3: el backend rechaza un reporte con menos. */}
+        <ul className="report-list">
+          {report.highlights.map((h) => (
+            <li key={h.player_id}>
+              <PlayerName player={h} />
+              {h.low_minutes && <span className="cell-note">{text.lowMinutes}</span>}
+              {h.reason}
+            </li>
+          ))}
+        </ul>
       </ReportSection>
 
       <ReportSection title={text.alerts} icon={<FlagIcon />}>

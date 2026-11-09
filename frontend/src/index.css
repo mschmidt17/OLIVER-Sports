@@ -259,7 +259,7 @@ h1, h2, h3, p {
 /* Sobre el navy: misma flecha propia (ver "select" más abajo), en blanco. */
 .topbar select {
   max-width: 100%;
-  padding: 8px 42px 8px 14px;
+  padding: 5px 42px 5px 14px;
   border-color: var(--navy-line);
   border-radius: 10px;
   background-color: var(--navy-soft);
