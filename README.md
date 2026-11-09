@@ -19,12 +19,20 @@ de Gemini ([Google AI Studio](https://aistudio.google.com/apikey)).
 > el backend (paso 1) y el frontend (paso 2). Si solo se levanta el frontend, la
 > página carga pero no muestra datos.
 
+### 0. Clonar el repositorio
+
+```bash
+git clone https://github.com/mschmidt17/OLIVER-Sports.git
+cd OLIVER-Sports
+```
+
 ### 1. Backend (terminal 1)
 
 ```bash
 cd backend
 npm install
-cp .env.example .env     # completar GEMINI_API_KEY
+cp .env.example .env     # en cmd de Windows: copy .env.example .env
+                         # después, abrir backend/.env y pegar la key en GEMINI_API_KEY
 npm run seed             # crea backend/data/oliver.db con los datos de session_data.json
 npm run dev              # API en http://localhost:4000
 ```
@@ -50,11 +58,10 @@ npm run dev              # abrir la URL que muestra Vite (por defecto http://loc
 El frontend llama a `/api/...` y Vite lo redirige al backend. El puerto lo toma
 de `PORT` en `backend/.env`, así que no hay que configurar nada más.
 
-> El reporte con IA se muestra al costado de los datos si hay espacio; en pantallas
-> chicas (o con mucho zoom o escalado) va debajo. Contraer el menú lateral con la
-> pestaña de su borde libera espacio y puede llevarlo al costado.
-
 Para apagar cada uno, `Ctrl + C` en su terminal.
+
+> Si el frontend muestra "No se pudo conectar con el backend", falta levantar el
+> backend (paso 1) o se cerró su terminal.
 
 ### 3. Tests
 
@@ -63,7 +70,7 @@ cd backend
 npm test
 ```
 
-39 tests unitarios sobre la detección de alertas, el armado del contexto para la IA,
+40 tests unitarios sobre la detección de alertas, el armado del contexto para la IA,
 la validación de la respuesta del modelo y el manejo de errores de la IA (reintento,
 timeout y códigos HTTP, con Gemini simulado: no hace falta API key).
 
@@ -77,9 +84,6 @@ timeout y códigos HTTP, con Gemini simulado: no hace falta API key).
 | `GEMINI_API_KEY` | — | API key de Gemini (nunca se sube al repo) |
 | `GEMINI_MODEL` | `gemini-3.1-flash-lite` | Modelo |
 | `AI_TIMEOUT_MS` | `20000` | Tiempo máximo de espera del modelo |
-
-> Si el frontend muestra "No se pudo conectar con el backend", falta levantar el
-> backend (paso 1) o se cerró su terminal.
 
 ---
 
@@ -121,7 +125,7 @@ curl -X POST http://localhost:4000/sessions/103/report \
 |---|---|
 | 400 | Parámetro o body inválido (mensaje con el detalle) |
 | 404 | La sesión no existe |
-| 502 | El modelo devolvió una respuesta inválida o con datos inventados |
+| 502 | El modelo devolvió una respuesta inválida o con datos inventados, o falló la llamada al proveedor (por ejemplo, API key inválida) |
 | 503 | Proveedor de IA saturado (después de reintentar) o sin API key |
 | 504 | El modelo no respondió a tiempo |
 
@@ -181,13 +185,12 @@ que es la base de la estrategia contra datos inventados. Dentro de Gemini usé
 - **Disponibilidad:** al probar con una API key nueva, `gemini-2.5-flash` ya no estaba habilitado
   para usuarios nuevos, y los Flash más recientes (`3.5`, `3.8`) respondían "high demand"
   o tardaban más de 20 s. Flash-Lite respondió de forma estable.
-- **Velocidad:** cada reporte tarda entre 2 y 8 s.
+- **Velocidad:** cada reporte tarda unos pocos segundos (entre 1,5 y 8 s en las pruebas).
 - **Suficiente para la tarea:** el modelo no calcula nada, solo redacta a partir de datos
   ya procesados. No hace falta un modelo grande.
 - **Temperatura 0.3:** se busca un reporte fiel a los datos, no creativo.
 
-Se puede cambiar con `GEMINI_MODEL` sin tocar código. El modelo forma parte de la
-clave de la caché, así que un cambio de modelo no sirve reportes del anterior.
+Se puede cambiar con `GEMINI_MODEL` sin tocar código.
 
 ---
 
@@ -230,7 +233,8 @@ con `player_id` y textos), y el backend aplica estas barreras:
    porque el pedido no es una garantía. El esquema se define una sola vez, en Zod,
    y se convierte a JSON Schema para el modelo.
 2. **Jugadores:** se descartan los `player_id` que no están en la sesión, y los
-   comentarios de alerta para jugadores sin alerta calculada.
+   comentarios de alerta para jugadores sin alerta calculada. Si después del descarte
+   quedan menos de 2 destacados, la respuesta se rechaza (502).
 3. **Números:** cada número que aparece en los textos tiene que existir en los datos
    de la sesión. Si no existe, la respuesta se rechaza (502).
 4. **Nombres, métricas y alertas** se completan desde la base. Las alertas del reporte
@@ -250,7 +254,7 @@ con `player_id` y textos), y el backend aplica estas barreras:
 - **Timeout** con `AbortController` (504).
 - **Un reintento** ante errores temporales: 429 (rate limit) y 503 (modelo saturado).
   El 503 lo agregué al probar en vivo, porque Gemini lo devolvía seguido. Si persiste, 503.
-- **Respuesta inválida o con datos inventados:** 502.
+- **Respuesta inválida o con datos inventados, o cualquier otro error del proveedor:** 502.
 - El proveedor se elige con `AI_PROVIDER`. Sumar otro solo requiere un cliente con la
   misma forma; el timeout, el reintento y el mapeo de errores son comunes.
 
@@ -259,8 +263,7 @@ con `player_id` y textos), y el backend aplica estas barreras:
 `prompts/sessionReport.v2.js` contiene las instrucciones, las variantes por idioma y
 por destinatario, y el esquema de respuesta. Si cambia, se crea una versión nueva en vez
 de editar la anterior, y cada reporte informa con qué versión y modelo se generó (en la
-interfaz, como tooltip sobre la fecha: al cuerpo técnico no le aporta y se mantiene a
-mano para revisar).
+interfaz, como tooltip sobre la fecha de generación).
 
 **De v1 a v2:** en v1 el destinatario era una sola frase de tono, y al probarlo los
 reportes para cuerpo técnico y para jugadores casi no se diferenciaban. v2 da
@@ -278,46 +281,30 @@ no se vuelven a servir.
   descarta y se genera otra. Nombres y métricas siempre salen de la base.
 - **Errores:** solo se guarda una respuesta que pasó la validación.
 - `refresh: true` (botón "Regenerar") fuerza un reporte nuevo.
-- **Resultado:** un reporte repetido responde en unos 5 ms, contra 2 a 8 s del modelo.
+- **Resultado:** un reporte repetido responde en pocos milisegundos, contra varios segundos del modelo.
 
 ### Otras
 
 - **Orden de la tabla en el navegador:** son 12 filas y así no hay una request por clic.
   El backend igual soporta `order_by` porque lo pide la API.
 - **Proxy de Vite en vez de CORS:** el navegador ve un solo origen y no hace falta otra librería.
-- **Identidad visual inspirada en OLIVER:** tipografía Rubik y la paleta de su sitio
-  (navy y azul), pero con colores planos: un sitio de marketing busca impacto y una
-  herramienta de trabajo busca legibilidad. El navy queda en el marco (menú lateral y barra
-  superior) y los datos van sobre fondo claro; la marca es el isotipo y el logo oficiales,
-  sin modificar. El color se reserva para el significado: el azul solo para lo interactivo
-  (el rosa de la marca no se usa, para que no se confunda con una alerta) y los colores de
-  alerta, validados por contraste y daltonismo,
-  van siempre con ícono y texto y nunca como decoración. Única excepción al azul: el
-  reporte con IA usa el azul de marca en tinte suave como identidad (fichas y resumen),
-  para distinguir a simple vista lo que generó la IA del resto de los datos.
-- **Layout de dashboard:** menú lateral con la marca y la sección activa, barra superior
-  con el selector de sesión, el resumen en un único bloque y, debajo, datos (tabla y
-  gráfico) a la izquierda y reporte a la derecha. El menú lateral se contrae con una
-  pestaña en su borde y deja solo los íconos (con tooltip).
+- **Identidad visual inspirada en OLIVER:** tipografía Rubik y la paleta de su sitio, con
+  colores planos. El navy queda en el marco (menú lateral y barra superior) y los datos van
+  sobre fondo claro. El azul se usa solo para lo interactivo, salvo en el reporte con IA,
+  que lo lleva en tinte suave para distinguir a simple vista lo que generó la IA. Los colores
+  de alerta (validados por contraste y daltonismo) van siempre con ícono y texto.
 - **El layout depende del espacio del contenido, no de la ventana:** el reporte va al
-  costado solo si la tabla entra completa a su lado (área de contenido de 1320px o más:
-  unos 910px de tabla y 380px de reporte); si no, va debajo de los datos. La regla es que
-  los datos nunca se esconden para hacerle lugar al reporte: para un preparador físico la
-  tabla es la herramienta principal y el reporte se consulta a pedido. Se resuelve con una
-  *container query* (`@container`) en lugar de una *media query*: responde igual al tamaño
-  de pantalla, al zoom, al escalado de Windows y a contraer el menú. En una notebook el
-  reporte va debajo; en un monitor de 1920px, al costado. Por debajo de 900px de ventana
-  el menú se vuelve una franja arriba.
-- **Reporte como informe:** encabezado con la sesión, resumen destacado y secciones
-  (Destacados, Alertas, Sin dato). Las alertas de cada jugador se agrupan por nivel
-  ("◆ Crítico: Carga 810" / "▲ Advertencia: Distancia 10.488 · RPE 9"), así cada nivel se
-  nombra una sola vez con su ícono, color y texto, y cada línea lleva el fondo de su nivel
-  como en la tabla. El informe se muestra entero en el idioma en que se generó: en inglés
-  cambian títulos, niveles, métricas, números (10,488) y fechas (Sep 19, 2026); el título
-  de la sesión queda como está en la base.
-- **Tabla compacta con números a la derecha:** cifras de distinto largo (3.900 y 10.488)
-  quedan encolumnadas y se comparan de un vistazo; el número y el nombre quedan fijos al
-  desplazarse de costado.
+  costado de los datos solo si la tabla entra completa (área de contenido de 1320px o más);
+  si no, va debajo. Los datos nunca se esconden para hacerle lugar al reporte: para un
+  preparador físico la tabla es la herramienta principal. Se resuelve con una *container
+  query* (`@container`), que responde igual al tamaño de pantalla, al zoom y a contraer
+  el menú lateral.
+- **Reporte como informe:** resumen y secciones (Destacados, Alertas, Sin dato); las alertas
+  de cada jugador se agrupan por nivel ("◆ Crítico: Carga 810"). Se muestra entero en el
+  idioma en que se generó, incluidos números y fechas; el título de la sesión y los nombres
+  quedan como están en la base.
+- **Tabla con números alineados a la derecha:** las cifras quedan encolumnadas y se comparan
+  de un vistazo; el número y el nombre quedan fijos al desplazarse de costado.
 - **Puerto 4000:** el 3000 suele estar ocupado por otras apps de desarrollo.
 - **Tests unitarios de `domain/` y `ai/index.js`:** `domain/` tiene las reglas de negocio
   y `ai/index.js` el manejo de errores de la IA (con Gemini simulado). Los endpoints los
