@@ -748,6 +748,12 @@ td.alert-cell {
 
 /* --- Gráfico --- */
 
+/* Recharts agrupa las barras en un <g tabindex="-1">: el clic lo enfoca y el
+   navegador dibuja un borde. No se alcanza con Tab, así que no se pierde nada. */
+.recharts-wrapper g:focus {
+  outline: none;
+}
+
 .chart-axis-title {
   margin: 12px 0 4px;
   font-size: 12px;

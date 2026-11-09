@@ -1,89 +1,118 @@
-# ⚽ OLIVER — Mini reporte de sesión con IA
+# OLIVER — Mini reporte de sesión con IA
 
-Dashboard para que un cuerpo técnico revise una sesión (entrenamiento o partido):
-métricas por jugador en una tabla y un gráfico, resaltado de los valores que
-alcanzan los umbrales del equipo, y un reporte escrito por IA que resume la
-sesión, destaca jugadores y alerta sobre cargas altas **sin inventar datos**.
+Dashboard de análisis de rendimiento deportivo para que un cuerpo técnico pueda revisar una sesión de entrenamiento o partido: consultar métricas individuales, identificar alertas de carga y generar un reporte con IA.
 
-- **Backend:** Node.js + Express 5, SQLite (`better-sqlite3`, SQL directo), Zod, Gemini (`@google/genai`), Vitest
-- **Frontend:** React + Vite, Recharts, tabla HTML propia
+El proyecto está desarrollado a partir del challenge técnico de OLIVER. La solución cubre el flujo completo: carga de datos, API, visualización y generación de reportes, con especial atención a los datos incompletos y a evitar información inventada por el modelo.
+
+## Funcionalidades
+
+- Selector de sesión.
+- Tabla de métricas por jugador, con ordenamiento por columna.
+- Gráfico de métricas seleccionables por jugador.
+- Alertas visuales según los umbrales del equipo.
+- Reportes con IA en español o inglés, orientados al cuerpo técnico o al jugador.
+- Estados de carga, error y ausencia de datos en la interfaz.
+- Caché de reportes para evitar llamadas repetidas al modelo.
+
+## Stack tecnológico
+
+| Área | Tecnologías |
+|---|---|
+| Backend | Node.js, Express 5, SQLite (`better-sqlite3`), SQL directo |
+| Validación | Zod |
+| Frontend | React, Vite, Recharts |
+| IA | Gemini 3.1 Flash-Lite (`@google/genai`) |
+| Tests | Vitest |
 
 ---
 
-## Cómo correrlo
+## Cómo ejecutar el proyecto
 
-**Requisitos:** Node.js 22 o superior (probado con Node 24) y una API key gratuita
-de Gemini ([Google AI Studio](https://aistudio.google.com/apikey)).
+### Requisitos
 
-> **La app necesita dos procesos corriendo al mismo tiempo, en dos terminales:**
-> el backend (paso 1) y el frontend (paso 2). Si solo se levanta el frontend, la
-> página carga pero no muestra datos.
+- Node.js 22 o superior (probado con Node 24).
+- Una API key de Gemini: [Google AI Studio](https://aistudio.google.com/apikey).
 
-### 0. Clonar el repositorio
+La aplicación necesita dos procesos ejecutándose al mismo tiempo: el backend y el frontend, cada uno en una terminal diferente.
+
+### 1. Clonar el repositorio
 
 ```bash
 git clone https://github.com/mschmidt17/OLIVER-Sports.git
 cd OLIVER-Sports
 ```
 
-### 1. Backend (terminal 1)
+### 2. Instalar y ejecutar el backend
+
+En la primera terminal:
 
 ```bash
 cd backend
 npm install
-cp .env.example .env     # en cmd de Windows: copy .env.example .env
-                         # después, abrir backend/.env y pegar la key en GEMINI_API_KEY
-npm run seed             # crea backend/data/oliver.db con los datos de session_data.json
-npm run dev              # API en http://localhost:4000
+cp .env.example .env
 ```
 
-- El seed es **obligatorio antes del primer arranque**: crea las tablas y carga los datos.
-  Se puede correr las veces que haga falta, porque borra y vuelve a cargar todo
-  (incluida la caché de reportes).
-- Sin `GEMINI_API_KEY` la app funciona igual (tabla y gráfico); solo el reporte
-  responde 503 con un mensaje claro.
+En Windows CMD, el comando para copiar el archivo es:
 
-Dejar esta terminal abierta: el backend tiene que seguir corriendo.
+```cmd
+copy .env.example .env
+```
 
-### 2. Frontend (terminal 2)
+Abrí `backend/.env` y configurá `GEMINI_API_KEY` con tu clave de Gemini. Después ejecutá:
 
-Con el backend ya corriendo, en **otra** terminal:
+```bash
+npm run seed
+npm run dev
+```
+
+La API queda disponible en `http://localhost:4000`.
+
+**Importante:** el seed debe ejecutarse antes del primer arranque. Crea las tablas y carga los datos de `session_data.json`. Cada ejecución vuelve a cargar los datos desde cero y también elimina la caché de reportes.
+
+La aplicación puede utilizarse sin `GEMINI_API_KEY`: la tabla y el gráfico siguen funcionando, pero la generación del reporte devuelve un error `503` con un mensaje explicativo.
+
+Dejá esta terminal abierta mientras uses la aplicación.
+
+### 3. Instalar y ejecutar el frontend
+
+En una segunda terminal, desde la raíz del proyecto:
 
 ```bash
 cd frontend
 npm install
-npm run dev              # abrir la URL que muestra Vite (por defecto http://localhost:5173)
+npm run dev
 ```
 
-El frontend llama a `/api/...` y Vite lo redirige al backend. El puerto lo toma
-de `PORT` en `backend/.env`, así que no hay que configurar nada más.
+Abrí la URL que muestra Vite (por defecto, `http://localhost:5173`).
 
-Para apagar cada uno, `Ctrl + C` en su terminal.
+El frontend realiza las llamadas a `/api/...` y Vite las redirige al backend. El proxy utiliza el puerto configurado en `PORT` dentro de `backend/.env`.
 
-> Si el frontend muestra "No se pudo conectar con el backend", falta levantar el
-> backend (paso 1) o se cerró su terminal.
+Si aparece el mensaje **“No se pudo conectar con el backend”**, verificá que el proceso del backend siga ejecutándose.
 
-### 3. Tests
+Para detener cada proceso, usá `Ctrl + C` en su terminal.
+
+### 4. Ejecutar los tests
+
+Desde la carpeta `backend`:
 
 ```bash
-cd backend
 npm test
 ```
 
-40 tests unitarios sobre la detección de alertas, el armado del contexto para la IA,
-la validación de la respuesta del modelo y el manejo de errores de la IA (reintento,
-timeout y códigos HTTP, con Gemini simulado: no hace falta API key).
+La suite incluye tests unitarios sobre la detección de alertas, el armado del contexto para la IA, la validación de la respuesta y el manejo de errores del proveedor (reintentos, timeout y códigos HTTP). Gemini está simulado en estos tests, por lo que no hace falta una API key.
 
-### Variables de entorno (`backend/.env`)
+### Variables de entorno
 
-| Variable | Default | Para qué |
+Configuración en `backend/.env`:
+
+| Variable | Valor por defecto | Descripción |
 |---|---|---|
-| `PORT` | `4000` | Puerto de la API (el frontend lo lee para el proxy) |
-| `DB_PATH` | `data/oliver.db` | Archivo SQLite, relativo a `backend/` |
-| `AI_PROVIDER` | `gemini` | Proveedor de IA |
-| `GEMINI_API_KEY` | — | API key de Gemini (nunca se sube al repo) |
-| `GEMINI_MODEL` | `gemini-3.1-flash-lite` | Modelo |
-| `AI_TIMEOUT_MS` | `20000` | Tiempo máximo de espera del modelo |
+| `PORT` | `4000` | Puerto de la API. También se utiliza para configurar el proxy del frontend. |
+| `DB_PATH` | `data/oliver.db` | Ubicación de SQLite, relativa a `backend/`. |
+| `AI_PROVIDER` | `gemini` | Proveedor de IA. |
+| `GEMINI_API_KEY` | — | API key de Gemini. No debe subirse al repositorio. |
+| `GEMINI_MODEL` | `gemini-3.1-flash-lite` | Modelo utilizado. |
+| `AI_TIMEOUT_MS` | `20000` | Tiempo máximo de espera del modelo, en milisegundos. |
 
 ---
 
@@ -91,21 +120,20 @@ timeout y códigos HTTP, con Gemini simulado: no hace falta API key).
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET | `/sessions` | Lista de sesiones: id, fecha, título y tipo |
-| GET | `/sessions/:id/metrics` | Métricas de los jugadores, más umbrales y alertas ya calculadas |
-| POST | `/sessions/:id/report` | Reporte con IA (usa la caché si ya existe) |
+| `GET` | `/sessions` | Lista las sesiones (id, fecha, título y tipo). |
+| `GET` | `/sessions/:id/metrics` | Devuelve las métricas de los jugadores, los umbrales y las alertas calculadas. |
+| `POST` | `/sessions/:id/report` | Genera el reporte con IA o devuelve uno válido desde la caché. |
 
-**Filtro y orden de métricas:**
+### Filtrar y ordenar métricas
 
-```
+```http
 GET /sessions/103/metrics?player_id=5
 GET /sessions/103/metrics?order_by=total_distance_m&order=desc
 ```
 
-`order_by` se valida contra una lista blanca de columnas (es lo que evita SQL injection,
-porque `ORDER BY` no admite parámetros). Los valores `null` van siempre al final.
+`order_by` se valida contra una lista permitida de columnas antes de construir la consulta SQL. Esto evita interpolar nombres de columna arbitrarios en `ORDER BY`, donde no se pueden utilizar parámetros SQL convencionales. Los valores `null` quedan siempre al final del ordenamiento.
 
-**Reporte:**
+### Generar un reporte
 
 ```bash
 curl -X POST http://localhost:4000/sessions/103/report \
@@ -113,264 +141,227 @@ curl -X POST http://localhost:4000/sessions/103/report \
   -d '{ "language": "es", "audience": "coach" }'
 ```
 
-| Campo del body | Valores | Default |
-|---|---|---|
-| `language` | `es`, `en` | `es` |
-| `audience` | `coach`, `player` | `coach` |
-| `refresh` | `true` ignora la caché y genera uno nuevo | `false` |
+| Campo | Valores | Por defecto | Descripción |
+|---|---|---|---|
+| `language` | `es`, `en` | `es` | Idioma del reporte. |
+| `audience` | `coach`, `player` | `coach` | Destinatario del reporte. |
+| `refresh` | `true`, `false` | `false` | Con `true`, ignora la caché y genera un reporte nuevo. |
 
-**Errores:**
+### Códigos de respuesta relevantes
 
-| Código | Cuándo |
+| Código | Situación |
 |---|---|
-| 400 | Parámetro o body inválido (mensaje con el detalle) |
-| 404 | La sesión no existe |
-| 502 | El modelo devolvió una respuesta inválida o con datos inventados, o falló la llamada al proveedor (por ejemplo, API key inválida) |
-| 503 | Proveedor de IA saturado (después de reintentar) o sin API key |
-| 504 | El modelo no respondió a tiempo |
+| `400` | Parámetro o body inválido. La respuesta incluye el detalle de validación. |
+| `404` | La sesión solicitada no existe. |
+| `502` | Respuesta del modelo inválida, contenido que no supera las validaciones o error del proveedor (por ejemplo, API key inválida). |
+| `503` | No hay API key configurada, `AI_PROVIDER` tiene un valor desconocido o el proveedor continúa saturado después del reintento. |
+| `504` | El modelo superó el tiempo máximo de espera. |
 
 ---
 
-## Estructura de proyecto
+## Arquitectura
 
+```text
+Frontend (React + Vite)
+        |
+        | /api/...
+        v
+Vite proxy (desarrollo)
+        |
+        v
+Backend (Express)
+        |
+        +------ SQLite
+        |         |
+        |         +-- sesiones, jugadores y métricas
+        |         +-- caché de reportes
+        |
+        +------ Lógica de dominio
+        |         |
+        |         +-- detección de alertas
+        |         +-- armado del contexto
+        |         +-- validación del reporte
+        |
+        +------ Proveedor de IA
+                  |
+                  v
+              Gemini
 ```
+
+La lógica de negocio se mantiene separada de las rutas y de la integración con el proveedor de IA. Las rutas validan la entrada y delegan el trabajo en los servicios; las reglas de alertas y validación viven en módulos de dominio independientes.
+
+## Estructura del proyecto
+
+```text
 backend/
-├── session_data.json            datos del challenge (fuente del seed)
+├── session_data.json
 └── src/
-    ├── server.js                app Express y manejo de errores
+    ├── server.js
     ├── db/
-    │   ├── schema.sql           tablas
-    │   ├── connection.js        conexión a SQLite (carga backend/.env)
-    │   └── seed.js              carga session_data.json en la base
+    │   ├── schema.sql
+    │   ├── connection.js
+    │   └── seed.js
     ├── routes/
-    │   └── sessions.routes.js   valida con Zod y responde, sin lógica
-    ├── services/                acceso a la base y orquestación
+    │   └── sessions.routes.js
+    ├── services/
     │   ├── metrics.service.js
     │   └── report.service.js
-    ├── domain/                  lógica pura, con sus tests (*.test.js)
+    ├── domain/
     │   ├── alerts.js
     │   ├── buildContext.js
     │   └── validateReport.js
     ├── ai/
-    │   ├── index.js             proveedor, timeout, reintento y errores (con su test)
-    │   └── geminiClient.js      llamada a Gemini
+    │   ├── index.js
+    │   └── geminiClient.js
     └── prompts/
-        ├── sessionReport.v1.js  primera versión (se conserva como historial)
-        └── sessionReport.v2.js  prompt en uso + esquema de la respuesta
+        ├── sessionReport.v1.js
+        └── sessionReport.v2.js
 
-frontend/public/                 isotipo y logo oficiales de OLIVER (favicon y menú lateral)
-frontend/src/
-├── App.jsx                      página principal
-├── metrics.js                   métricas, niveles de alerta y helpers compartidos
-├── api/
-│   └── client.js                llamadas al backend
-└── components/
-    ├── Sidebar.jsx              menú lateral: marca y sección activa
-    ├── SessionSelector.jsx      selector de sesión (barra superior)
-    ├── SessionHeader.jsx        encabezado de la sesión y bloque de resumen
-    ├── MetricsTable.jsx
-    ├── MetricChart.jsx
-    ├── ReportPanel.jsx          controles y reporte con IA como informe
-    └── icons.jsx                íconos SVG propios, sin librería
+frontend/
+├── public/
+└── src/
+    ├── App.jsx
+    ├── metrics.js
+    ├── api/
+    │   └── client.js
+    └── components/
+        ├── Sidebar.jsx
+        ├── SessionSelector.jsx
+        ├── SessionHeader.jsx
+        ├── MetricsTable.jsx
+        ├── MetricChart.jsx
+        ├── ReportPanel.jsx
+        └── icons.jsx
 ```
 
 ---
 
-## Modelo de IA: Gemini 3.1 Flash-Lite
+## Integración con IA
 
-Elegí **Gemini** porque su tier gratuito admite **salida estructurada con JSON Schema**,
-que es la base de la estrategia contra datos inventados. Dentro de Gemini usé
-**`gemini-3.1-flash-lite`**:
+### Modelo elegido: Gemini 3.1 Flash-Lite
 
-- **Disponibilidad:** al probar con una API key nueva, `gemini-2.5-flash` ya no estaba habilitado
-  para usuarios nuevos, y los Flash más recientes (`3.5`, `3.8`) respondían "high demand"
-  o tardaban más de 20 s. Flash-Lite respondió de forma estable.
-- **Velocidad:** cada reporte tarda unos pocos segundos (entre 1,5 y 8 s en las pruebas).
-- **Suficiente para la tarea:** el modelo no calcula nada, solo redacta a partir de datos
-  ya procesados. No hace falta un modelo grande.
-- **Temperatura 0.3:** se busca un reporte fiel a los datos, no creativo.
+Elegí Gemini porque permite solicitar respuestas estructuradas mediante JSON Schema en su tier gratuito. En las pruebas, `gemini-3.1-flash-lite` ofreció una respuesta suficientemente rápida y estable para este caso.
 
-Se puede cambiar con `GEMINI_MODEL` sin tocar código.
+El modelo no calcula métricas ni determina alertas: recibe información previamente procesada por el backend y se encarga de redactar el reporte. Se configuró una temperatura de `0.3` para priorizar respuestas consistentes y basadas en los datos.
+
+El modelo se puede cambiar mediante `GEMINI_MODEL`, sin modificar el código.
+
+### Contexto que recibe el modelo
+
+Antes de llamar a Gemini, el backend prepara la información necesaria en `domain/buildContext.js`:
+
+- Alertas detectadas previamente, con su nivel y umbral.
+- Métricas por minuto (distancia, carrera a alta velocidad, sprints y aceleraciones), para dar contexto cuando los jugadores participaron distinta cantidad de tiempo.
+- Indicador `low_minutes` para quienes jugaron menos del 50% de la sesión.
+- Datos faltantes identificados explícitamente, para que un `null` no se interprete como cero.
+- Identificación de jugadores mediante `player_id`, sin enviar sus nombres al modelo.
+
+### Cómo se evita mostrar datos inventados
+
+La integración combina salida estructurada y validaciones posteriores. La respuesta del modelo no se considera confiable solo por haber solicitado un JSON con un esquema.
+
+1. **Estructura:** Gemini recibe un esquema JSON. La respuesta se vuelve a validar con Zod; el esquema se define una sola vez en Zod y se convierte a JSON Schema para el modelo.
+2. **Jugadores:** se descartan los `player_id` que no pertenecen a la sesión y los comentarios de alerta asociados a jugadores que no tienen una alerta calculada. Si quedan menos de dos destacados, se rechaza la respuesta.
+3. **Números:** cada número mencionado en los textos debe existir en los datos de la sesión. Si no existe, se rechaza la respuesta.
+4. **Datos confiables:** nombres, métricas y alertas se completan desde la base de datos. La IA aporta los comentarios, pero no decide qué jugadores tienen alertas. Si el modelo omite una alerta, igualmente se incluye en el reporte.
+
+**Límite de esta validación:** el control de números es estricto. Por ejemplo, un porcentaje calculado correctamente pero que no exista como valor en los datos puede provocar el rechazo del reporte. Además, no se pueden verificar completamente afirmaciones cualitativas como “la mayor distancia del equipo”. Por eso, los niveles de alerta que ve el usuario siempre provienen de los cálculos del backend y no del texto generado.
+
+### Prompts versionados
+
+Los prompts están en módulos propios dentro de `backend/src/prompts/`. La versión activa es `sessionReport.v2.js`; la versión anterior se conserva como historial.
+
+En las pruebas, la primera versión no diferenciaba lo suficiente los reportes para cuerpo técnico y jugadores. La segunda define instrucciones específicas para cada destinatario:
+
+- **Cuerpo técnico:** lenguaje técnico y una acción posible para la próxima sesión.
+- **Jugador:** segunda persona, lenguaje sencillo y recomendaciones de recuperación.
+
+Cada reporte informa qué versión de prompt y qué modelo se utilizaron. Esa información se muestra en la interfaz como tooltip sobre la fecha de generación.
+
+### Manejo de errores
+
+- **Timeout:** se controla con `AbortController`; devuelve `504`.
+- **Reintentos:** se realiza un reintento ante errores temporales `429` (rate limit) y `503` (modelo saturado).
+- **Respuesta inválida o error del proveedor:** devuelve `502`.
+- **Proveedor no disponible:** si falta la API key o el proveedor continúa saturado después del reintento, devuelve `503`.
+
+La selección del proveedor se realiza mediante `AI_PROVIDER`. El timeout, los reintentos y el mapeo de errores son compartidos; para sumar otro proveedor se necesita implementar un cliente con la misma interfaz.
 
 ---
 
 ## Decisiones de diseño y trade-offs
 
-### Datos
+### Datos incompletos
 
-- Se respetan los IDs originales del JSON.
-- Un dato faltante (`rpe` y `workload_au` en `NULL`) es "sin dato" en toda la app, **nunca 0**.
-- **Trade-off:** el seed borra y recrea las tablas. Es simple y reproducible, pero en
-  un sistema real harían falta migraciones.
+- Se conservan los IDs originales del JSON.
+- Los valores faltantes (`rpe` y `workload_au` en `null`) se muestran como **sin dato**, nunca como `0`.
+- El seed recrea las tablas y vuelve a cargar los datos desde el JSON. Es simple y reproducible para el challenge, pero en un sistema real lo reemplazaría por migraciones.
 
-### Alertas: se calculan en código, nunca las decide la IA
+### Alertas calculadas en el backend
 
-- **Regla `>=`:** el enunciado dice "superar el umbral", pero tomé que **alcanzarlo**
-  ya genera alerta (por ejemplo, RPE 8 con umbral 8). En el contexto de carga física
-  me pareció más prudente avisar de más que de menos. Cambiarlo es una línea en
-  `domain/alerts.js`.
-- Si un valor alcanza `critical`, la alerta es crítica y no se duplica como warning.
-- **Una sola fuente:** las calcula el backend (`domain/alerts.js`) y las usan la tabla,
-  el gráfico y el reporte. El frontend solo las pinta.
+Las alertas se calculan en `domain/alerts.js`; no se delegan al modelo. El backend es la única fuente para la tabla, el gráfico y el reporte, mientras que el frontend se ocupa de mostrarlas.
 
-### Contexto para la IA (`domain/buildContext.js`)
+El enunciado habla de superar el umbral. Tomé la decisión de generar una alerta cuando el valor **alcanza o supera** el umbral (`>=`). Por ejemplo, un RPE de 8 con un umbral de 8 genera una alerta. En el contexto de carga física me pareció más prudente avisar también al alcanzar el límite. Si se quisiera cambiar el criterio, está centralizado en `domain/alerts.js`.
 
-Lo que se calcula en código antes de llamar al modelo:
-
-- **Alertas** ya detectadas, con nivel y umbral.
-- **Métricas por minuto** (distancia, alta velocidad, sprints, aceleraciones), para que
-  un suplente con 28 minutos se compare de forma justa con quien jugó 90.
-- **`low_minutes`**: jugó menos del 50% de la sesión.
-- **Datos faltantes** listados explícitamente, para que el modelo no interprete un null como 0.
-- **Sin nombres:** el modelo solo ve `player_id`.
-
-### Nada de datos inventados
-
-El modelo devuelve JSON con un esquema fijo (`summary`, `highlights` y `alerts`, solo
-con `player_id` y textos), y el backend aplica estas barreras:
-
-1. **Esquema:** se pide salida JSON con el esquema y se vuelve a validar con Zod,
-   porque el pedido no es una garantía. El esquema se define una sola vez, en Zod,
-   y se convierte a JSON Schema para el modelo.
-2. **Jugadores:** se descartan los `player_id` que no están en la sesión, y los
-   comentarios de alerta para jugadores sin alerta calculada. Si después del descarte
-   quedan menos de 2 destacados, la respuesta se rechaza (502).
-3. **Números:** cada número que aparece en los textos tiene que existir en los datos
-   de la sesión. Si no existe, la respuesta se rechaza (502).
-4. **Nombres, métricas y alertas** se completan desde la base. Las alertas del reporte
-   salen del cálculo en código; el modelo solo aporta el comentario. Si se olvida de
-   comentar una, igual aparece.
-
-**Trade-offs:**
-
-- El control de números es estricto: si el modelo calcula un porcentaje correcto pero
-  que no está en los datos, el reporte se rechaza. El prompt le pide no hacer cálculos,
-  así que en las pruebas no pasó.
-- No se pueden validar **afirmaciones cualitativas** ("la mayor distancia del equipo")
-  ni el tono. Por eso los niveles de alerta que ve el usuario salen de los datos, no del texto.
-
-### Manejo de errores de la IA
-
-- **Timeout** con `AbortController` (504).
-- **Un reintento** ante errores temporales: 429 (rate limit) y 503 (modelo saturado).
-  El 503 lo agregué al probar en vivo, porque Gemini lo devolvía seguido. Si persiste, 503.
-- **Respuesta inválida o con datos inventados, o cualquier otro error del proveedor:** 502.
-- El proveedor se elige con `AI_PROVIDER`. Sumar otro solo requiere un cliente con la
-  misma forma; el timeout, el reintento y el mapeo de errores son comunes.
-
-### Prompt versionado
-
-`prompts/sessionReport.v2.js` contiene las instrucciones, las variantes por idioma y
-por destinatario, y el esquema de respuesta. Si cambia, se crea una versión nueva en vez
-de editar la anterior, y cada reporte informa con qué versión y modelo se generó (en la
-interfaz, como tooltip sobre la fecha de generación).
-
-**De v1 a v2:** en v1 el destinatario era una sola frase de tono, y al probarlo los
-reportes para cuerpo técnico y para jugadores casi no se diferenciaban. v2 da
-instrucciones concretas: al cuerpo técnico, lenguaje técnico y una acción para la
-próxima sesión; a los jugadores, segunda persona, sin jerga y con recomendaciones de
-recuperación. Como la versión es parte de la clave de la caché, los reportes de v1
-no se vuelven a servir.
+Cuando un valor alcanza el nivel `critical`, se muestra como crítico y no se duplica como warning.
 
 ### Caché de reportes (bonus)
 
-- **Clave:** sesión + idioma + destinatario + **versión del prompt** + **modelo**. Si
-  cambia el prompt o el modelo, no se sirven reportes viejos.
-- **Qué se guarda:** solo la respuesta cruda del modelo, y **se revalida en cada uso**
-  contra los datos actuales con el mismo `validateReport`. Si ya no coincide, se
-  descarta y se genera otra. Nombres y métricas siempre salen de la base.
-- **Errores:** solo se guarda una respuesta que pasó la validación.
-- `refresh: true` (botón "Regenerar") fuerza un reporte nuevo.
-- **Resultado:** un reporte repetido responde en pocos milisegundos, contra varios segundos del modelo.
+La caché guarda reportes generados para evitar volver a consultar al modelo cuando se repiten los mismos parámetros.
 
-### Otras
+- **Clave:** sesión + idioma + destinatario + versión del prompt + modelo.
+- **Contenido:** se guarda la respuesta cruda del modelo y se vuelve a validar en cada uso contra los datos actuales.
+- **Seguridad de los datos:** solo se almacena una respuesta que superó las validaciones. Los nombres y las métricas se completan desde la base.
+- **Regeneración:** `refresh: true` ignora la caché y genera un reporte nuevo.
 
-- **Orden de la tabla en el navegador:** son 12 filas y así no hay una request por clic.
-  El backend igual soporta `order_by` porque lo pide la API.
-- **Proxy de Vite en vez de CORS:** el navegador ve un solo origen y no hace falta otra librería.
-- **Identidad visual inspirada en OLIVER:** tipografía Rubik y la paleta de su sitio, con
-  colores planos. El navy queda en el marco (menú lateral y barra superior) y los datos van
-  sobre fondo claro. El azul se usa solo para lo interactivo, salvo en el reporte con IA,
-  que lo lleva en tinte suave para distinguir a simple vista lo que generó la IA. Los colores
-  de alerta (validados por contraste y daltonismo) van siempre con ícono y texto.
-- **El layout depende del espacio del contenido, no de la ventana:** el reporte va al
-  costado de los datos solo si la tabla entra completa (área de contenido de 1320px o más);
-  si no, va debajo. Los datos nunca se esconden para hacerle lugar al reporte: para un
-  preparador físico la tabla es la herramienta principal. Se resuelve con una *container
-  query* (`@container`), que responde igual al tamaño de pantalla, al zoom y a contraer
-  el menú lateral.
-- **Reporte como informe:** resumen y secciones (Destacados, Alertas, Sin dato); las alertas
-  de cada jugador se agrupan por nivel ("◆ Crítico: Carga 810"). Se muestra entero en el
-  idioma en que se generó, incluidos números y fechas; el título de la sesión y los nombres
-  quedan como están en la base.
-- **Tabla con números alineados a la derecha:** las cifras quedan encolumnadas y se comparan
-  de un vistazo; el número y el nombre quedan fijos al desplazarse de costado.
-- **Puerto 4000:** el 3000 suele estar ocupado por otras apps de desarrollo.
-- **Tests unitarios de `domain/` y `ai/index.js`:** `domain/` tiene las reglas de negocio
-  y `ai/index.js` el manejo de errores de la IA (con Gemini simulado). Los endpoints los
-  probé manualmente y con scripts.
+Incluir la versión del prompt y el modelo en la clave evita reutilizar reportes generados con instrucciones o modelos diferentes. Cuando se utiliza la caché, la respuesta se obtiene en pocos milisegundos, frente a los segundos que puede tardar una llamada al modelo.
+
+### Decisiones de frontend y experiencia de uso
+
+- **Ordenamiento local:** la tabla tiene 12 filas, por lo que el ordenamiento se realiza en el navegador y evita una request por cada clic. La API igualmente soporta `order_by`, tal como pide el challenge.
+- **Proxy de Vite:** se utiliza para mantener un único origen desde el navegador, sin agregar configuración de CORS.
+- **Layout adaptable:** el reporte se muestra al costado de los datos solo cuando hay espacio suficiente para que la tabla entre completa; de lo contrario, se ubica debajo. La decisión se resuelve con una container query, que responde al espacio disponible y no solamente al tamaño de la ventana. El dashboard está pensado para usarse en computadora.
+- **Jerarquía visual:** la tabla y las métricas son el foco principal. El reporte tiene un tratamiento visual diferenciado y los estados de alerta se identifican con color, ícono y texto.
+- **Datos legibles:** los números están alineados a la derecha y las columnas de jugador y número permanecen fijas al desplazarse horizontalmente.
+- **Reporte como informe:** el contenido se organiza en resumen, destacados, alertas y datos faltantes. Se muestra en el idioma en que fue generado; los nombres y el título de la sesión se mantienen como están en la base.
 
 ---
 
 ## Qué mejoraría con más tiempo
 
-- **Migraciones** en lugar de recrear la base con el seed.
-- **Tests de integración** de los endpoints (por ejemplo, con supertest) y del flujo de caché.
-- **Tests del frontend** (Vitest + Testing Library) para lo que tiene comportamiento: las
-  funciones de `metrics.js`, el orden y las marcas de la tabla, los conteos del resumen y
-  los estados del reporte. Hoy la lógica de negocio está testeada en el backend y la
-  interfaz se probó a mano.
-- **Evitar llamadas duplicadas al modelo** si llegan dos pedidos iguales al mismo tiempo.
-- **Streaming con SSE:** lo dejé afuera a propósito. El reporte se valida completo
-  (jugadores y números) antes de mostrarse; con streaming el usuario leería texto
-  todavía no validado. Acá pesa más no mostrar datos inventados que la velocidad percibida.
-- **Reporte de evolución** de un jugador a lo largo de las sesiones.
-- **Marcar "sin dato" dentro del gráfico,** en el lugar vacío del jugador. Hoy se explica en
-  una nota debajo del gráfico; marcarlo en el lugar requiere dibujar un elemento SVG propio,
-  porque Recharts no dibuja nada para un valor `null`.
-- **Validación más fina de los textos:** detectar afirmaciones como "la mayor distancia" y
-  verificarlas contra los datos.
+- Incorporar migraciones de base de datos en lugar de recrear las tablas con el seed.
+- Agregar tests de integración para los endpoints y el flujo completo de caché.
+- Incorporar tests del frontend para el ordenamiento, las alertas, los resúmenes y los estados del reporte.
+- Evitar llamadas duplicadas al modelo cuando llegan solicitudes iguales en simultáneo.
+- Implementar un reporte de evolución de un jugador a lo largo de las sesiones.
+- Mejorar la representación de los valores faltantes directamente en el gráfico.
+- Profundizar la validación semántica de los textos para detectar afirmaciones cualitativas que no se puedan respaldar con los datos.
+
+No implementé streaming con SSE. El reporte se valida completo antes de mostrarse; con streaming, el usuario podría empezar a leer contenido que todavía no pasó las validaciones. Para este caso prioricé la confiabilidad de la información por encima de la velocidad percibida.
 
 ---
 
-## Cómo usé herramientas de IA para programar
+## Uso de herramientas de IA durante el desarrollo
 
-Usé **Claude Code** (Claude) como asistente durante todo el desarrollo:
+Utilicé **Claude Code** como asistente durante el desarrollo.
 
-- **Reglas desde el inicio:** arranqué con un prompt que fijaba el stack cerrado, la
-  estructura de carpetas, reglas de código (simple antes que ingenioso, funciones chicas,
-  sin abstracciones "por si acaso") y las decisiones de diseño principales (regla `>=`,
-  null como "sin dato", la IA solo redacta).
-- **Trabajo por fases:** setup, API, lógica previa a la IA, integración con IA, frontend,
-  caché y README. Al final de cada fase revisaba qué hacía cada archivo, lo probaba,
-  pedía cambios y hacía el commit yo.
-- **Decisiones discutidas, no aceptadas sin más:** por ejemplo, el nombre de la carpeta
-  `domain/`, dónde va el `.env`, dónde se calculan las alertas y la clave de la caché.
-- **Revisiones de calidad:** después de cada fase corrí revisiones automáticas (reutilización,
-  simplificación, eficiencia y "altura" de cada solución). Aplicamos lo que simplificaba y
-  descartamos, con motivo, lo que agregaba complejidad.
-- **Pruebas reales:** además de los tests, se probó contra Gemini real y el dashboard en el
-  navegador. Ahí aparecieron problemas que no se veían en el código: el modelo deprecado,
-  el 503 por saturación, el puerto 3000 ocupado y un error en el prompt (confundía partido
-  con entrenamiento). Antes de entregar, cloné el repo en una carpeta limpia y seguí este
-  README: así apareció que `npm install` intentaba compilar `better-sqlite3`, y se resolvió
-  con `backend/.npmrc`.
-- **`CLAUDE.md`** en la raíz guarda las reglas y decisiones del proyecto para las próximas
-  sesiones con la herramienta.
+- Definí desde el inicio el stack, la estructura del proyecto, las reglas de código y las decisiones principales.
+- Dividí el trabajo en fases: configuración, API, lógica de dominio, integración con IA, frontend, caché y documentación.
+- Revisé el código generado, discutí las decisiones técnicas y no incorporé cambios automáticamente: evalué si simplificaban o agregaban complejidad innecesaria.
+- Ejecuté tests, probé la integración con Gemini y verifiqué el dashboard en el navegador.
+- Antes de entregar, cloné el repositorio en una carpeta limpia y seguí los pasos de este README para comprobar la instalación.
+
+El archivo `CLAUDE.md` de la raíz conserva las reglas y decisiones del proyecto para mantener el contexto de trabajo con la herramienta.
 
 ---
 
 ## Convención de commits
 
-[Conventional Commits](https://www.conventionalcommits.org/) en español: `tipo: descripción`,
-o `tipo(alcance): descripción` cuando ayuda a ubicar el cambio (por ejemplo,
-`feat(ui): estilo compacto de tabla y gráfico`).
+Se utilizó una convención basada en [Conventional Commits](https://www.conventionalcommits.org/), con descripciones en español. Por ejemplo:
 
-| Tipo | Uso |
-|---|---|
-| `feat` | Funcionalidad nueva |
-| `fix` | Corrección de un bug |
-| `refactor` | Cambio interno sin cambiar el comportamiento |
-| `test` | Tests |
-| `docs` | Documentación |
-| `chore` | Configuración, dependencias, setup |
+```text
+feat(ui): estilo compacto de tabla y gráfico
+fix: corregir validación de reporte
+test: agregar casos de datos incompletos
+docs: actualizar README
+```
