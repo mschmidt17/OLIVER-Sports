@@ -56,6 +56,8 @@ frontend/src
 frontend/public
   favicon.svg, favicon-32x32.png — isotipo de OLIVER (pestaña y menú lateral)
   logo-oliver-sports-white.webp — logo oficial en blanco (menú lateral)
+docs/images
+  capturas del dashboard usadas en el README (no forman parte de la app)
 ```
 
 La carpeta de lógica pura se llama `domain/` (no `lib/`).
