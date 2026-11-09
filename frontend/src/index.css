@@ -403,11 +403,7 @@ h1, h2, h3, p {
   line-height: 1.2;
 }
 
-/* Ancho del ícono y separación: los usan el título del indicador y la
-   sangría de los nombres, para que queden alineados con la etiqueta. */
 .summary {
-  --summary-icon-width: 20px;
-  --summary-icon-gap: 8px;
   padding: 14px 20px 14px;
 }
 
@@ -421,26 +417,29 @@ h1, h2, h3, p {
   column-gap: 24px;
 }
 
+/* Grilla de 3 columnas: ícono | número | etiqueta. Los nombres van debajo, en la
+   columna de la etiqueta. */
+.summary-item {
+  display: grid;
+  grid-template-columns: 20px auto 1fr;
+  column-gap: 8px;
+  align-items: center;
+  align-content: start;
+}
+
 /* Separador antes de cada indicador salvo el primero, sin importar cuántos haya. */
 .summary-item + .summary-item {
   padding-left: 24px;
   border-left: 1px solid var(--line);
 }
 
-.summary-headline {
-  display: flex;
-  align-items: center;
-  gap: var(--summary-icon-gap);
-  font-size: 14px;
-  font-weight: 500;
-}
-
-/* Ancho fijo: los números quedan alineados aunque un indicador no tenga ícono. */
+/* line-height 1: así el ▲ (texto) no queda más alto que la etiqueta, que es la
+   que define el alto de la fila; los títulos quedan a la misma altura en los cuatro. */
 .summary-icon {
-  display: inline-flex;
+  display: flex;
   justify-content: center;
-  width: var(--summary-icon-width);
   font-size: 16px;
+  line-height: 1;
   /* Con nivel (.level-*) toma su color; sin nivel, gris. */
   color: var(--level-color, var(--text-secondary));
 }
@@ -453,8 +452,13 @@ h1, h2, h3, p {
   color: var(--level-text, inherit);
 }
 
+.summary-label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
 .summary-players {
-  margin: 4px 0 0 calc(var(--summary-icon-width) + var(--summary-icon-gap));
+  grid-column: 3;
   font-size: 12px;
   color: var(--text-secondary);
 }
@@ -504,7 +508,7 @@ button:focus-visible {
 
 select, button {
   font: inherit;
-  font-size: 14px;
+  font-size: 13px;
   padding: 6px 10px;
   border: 1px solid var(--line-strong);
   border-radius: 6px;

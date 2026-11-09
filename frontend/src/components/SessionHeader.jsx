@@ -53,19 +53,17 @@ function PlayerList({ cellPlayers }) {
 }
 
 // Un indicador del resumen: ícono, número, etiqueta y, debajo, los jugadores.
-// Los de nivel (crítico / advertencia) solo toman color e ícono si hay celdas
-// con ese nivel; con 0 se ven neutros, para no alarmar sin motivo.
+// Los de nivel (crítico / advertencia) solo toman color si hay celdas con ese
+// nivel; con 0 se ven en gris, para no alarmar sin motivo.
 function SummaryItem({ label, cells, level, icon }) {
   const count = cells.length;
-  const activeLevel = count > 0 && level ? LEVELS[level] : null;
+  const isActive = count > 0 && level;
 
   return (
-    <li className={activeLevel ? `summary-item level-${level}` : 'summary-item'}>
-      <p className="summary-headline">
-        <span className="summary-icon" aria-hidden="true">{activeLevel ? activeLevel.icon : icon}</span>
-        <span className="summary-count">{count}</span>
-        {label}
-      </p>
+    <li className={isActive ? `summary-item level-${level}` : 'summary-item'}>
+      <span className="summary-icon" aria-hidden="true">{icon}</span>
+      <span className="summary-count">{count}</span>
+      <span className="summary-label">{label}</span>
       {count > 0 && <PlayerList cellPlayers={cells} />}
     </li>
   );
@@ -83,8 +81,18 @@ export default function SessionHeader({ session, players, alerts }) {
   const playersOfCells = (condition) => cells.filter(condition).map((cell) => cell.player);
 
   const summary = [
-    { label: 'Críticas', cells: playersOfCells((c) => c.alert?.level === 'critical'), level: 'critical' },
-    { label: 'Advertencias', cells: playersOfCells((c) => c.alert?.level === 'warning'), level: 'warning' },
+    {
+      label: 'Críticas',
+      cells: playersOfCells((c) => c.alert?.level === 'critical'),
+      level: 'critical',
+      icon: LEVELS.critical.icon,
+    },
+    {
+      label: 'Advertencias',
+      cells: playersOfCells((c) => c.alert?.level === 'warning'),
+      level: 'warning',
+      icon: LEVELS.warning.icon,
+    },
     { label: 'Datos faltantes', cells: playersOfCells((c) => c.missing), icon: <InfoIcon /> },
     { label: 'Pocos minutos', cells: playersOfCells((c) => c.lowMinutes), icon: <ClockIcon /> },
   ];
