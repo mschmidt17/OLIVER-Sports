@@ -1,26 +1,23 @@
 // Definiciones compartidas por la tabla, el gráfico y el reporte.
 
-// Métricas en el orden de la tabla. short: abreviatura del encabezado (nombre
-// completo en el tooltip). labelEn: nombre para el reporte en inglés.
+// Métricas en el orden de la tabla. short: abreviatura del encabezado;
+// labelEn: nombre en el reporte en inglés.
 export const METRICS = [
   { key: 'minutes_played', label: 'Minutos', labelEn: 'Minutes', unit: '' },
   { key: 'total_distance_m', label: 'Distancia', labelEn: 'Distance', unit: 'm' },
-  // Es una distancia (metros corridos por encima de cierto umbral de velocidad),
-  // no una velocidad: la velocidad es max_speed_kmh. HSR = high-speed running.
+  // HSR (high-speed running): metros corridos a alta velocidad, no una velocidad.
   { key: 'high_speed_running_m', label: 'Dist. alta velocidad', labelEn: 'High-speed running', short: 'HSR', unit: 'm' },
   { key: 'sprints', label: 'Sprints', labelEn: 'Sprints', unit: '' },
   { key: 'max_speed_kmh', label: 'Vel. máx.', labelEn: 'Max speed', unit: 'km/h' },
   { key: 'accelerations', label: 'Aceleraciones', labelEn: 'Accelerations', unit: '' },
-  // max: la escala tiene techo fijo (RPE va de 1 a 10); el gráfico lo usa para el eje.
+  // max: techo de la escala (RPE de 1 a 10), para el eje del gráfico.
   { key: 'rpe', label: 'RPE', labelEn: 'RPE', unit: '', max: 10 },
   { key: 'workload_au', label: 'Carga', labelEn: 'Workload', unit: 'AU' },
 ];
 
-// Métricas por minuto: las mismas que recibe la IA para comparar jugadores con
-// distintos minutos, así el entrenador puede comprobar lo que dice el reporte.
-// Llegan del backend como campos del jugador, igual que las demás. No tienen
-// umbral: los umbrales del equipo se aplican a los totales (thresholdNote lo
-// explica en la leyenda del gráfico).
+// Métricas por minuto: las mismas que usa la IA para comparar jugadores con
+// distintos minutos, así el entrenador puede verificar el reporte. No tienen
+// umbral propio (thresholdNote lo aclara en la leyenda del gráfico).
 const PER_MINUTE_NOTE = 'Sin umbral: los umbrales del equipo se aplican a los totales.';
 
 const PER_MINUTE_METRICS = [
@@ -36,15 +33,14 @@ export const CHART_METRIC_GROUPS = [
   { label: 'Por minuto jugado', metrics: PER_MINUTE_METRICS },
 ];
 
-// language: 'es' (por defecto, la app) o 'en' (solo el reporte en inglés).
+// language: 'es' (la app) o 'en' (el reporte en inglés).
 export function metricLabel(key, language = 'es') {
   const metric = METRICS.find((candidate) => candidate.key === key);
   if (!metric) return key;
   return language === 'en' ? metric.labelEn : metric.label;
 }
 
-// Niveles de alerta: el color nunca va solo, siempre con ícono y texto.
-// Colores validados por contraste y daltonismo.
+// Niveles de alerta: el color siempre va con ícono y texto (validados por contraste y daltonismo).
 export const LEVELS = {
   warning: { label: 'Advertencia', labelEn: 'Warning', icon: '▲', color: '#c98500' },
   critical: { label: 'Crítico', labelEn: 'Critical', icon: '◆', color: '#d93636' },
@@ -54,8 +50,7 @@ export function levelLabel(level, language = 'es') {
   return language === 'en' ? LEVELS[level].labelEn : LEVELS[level].label;
 }
 
-// Apellido (última palabra del nombre): alcanza para identificar a un jugador
-// en espacios chicos, como el eje del gráfico o la fila de resumen.
+// Apellido (última palabra): para espacios chicos, como el eje del gráfico.
 export function shortName(fullName) {
   return fullName.split(' ').at(-1);
 }
@@ -66,15 +61,13 @@ export function sessionTypeLabel(type) {
   return SESSION_TYPES[type] ?? type;
 }
 
-// Las fechas llegan como "YYYY-MM-DD". Se arman a mano para no pasar por
-// new Date(), que las interpreta en UTC y puede mostrar el día anterior.
+// "YYYY-MM-DD" -> "DD/MM/YYYY" sin new Date(), que usa UTC y puede correr un día.
 export function formatDate(isoDate) {
   const [year, month, day] = isoDate.split('-');
   return `${day}/${month}/${year}`;
 }
 
-// Las alertas las calcula el backend; acá solo se indexan para buscarlas
-// rápido por celda (jugador + métrica).
+// Las alertas vienen del backend; se indexan por jugador + métrica para buscarlas por celda.
 function alertKey(playerId, metric) {
   return `${playerId}:${metric}`;
 }
@@ -87,9 +80,8 @@ function findAlert(alertIndex, playerId, metric) {
   return alertIndex.get(alertKey(playerId, metric));
 }
 
-// Cómo se marca UNA celda de la tabla (jugador + métrica): alerta, "sin dato"
-// o "pocos min." (en la celda de minutos). Es la única fuente de esas marcas:
-// la tabla la usa para dibujar y el resumen de arriba para contar, así coinciden.
+// Marca de una celda (alerta, "sin dato" o "pocos min."). La usan la tabla para
+// dibujar y el resumen para contar, así siempre coinciden.
 export function cellMark(player, metricKey, alertIndex) {
   if (player[metricKey] == null) {
     return { missing: true, alert: null, lowMinutes: false };
@@ -101,13 +93,12 @@ export function cellMark(player, metricKey, alertIndex) {
   };
 }
 
-// Orden por número de camiseta: el de la tabla por defecto, que repiten el
-// gráfico y la fila de resumen para que todo se lea en el mismo orden.
+// Orden por camiseta: el de la tabla por defecto, que repiten el gráfico y el resumen.
 export function byShirtNumber(first, second) {
   return first.shirt_number - second.shirt_number;
 }
 
-// locale: el reporte en inglés usa 'en-US' (10,488); en español, 10.488.
+// locale: 'es-AR' muestra 10.488; 'en-US', 10,488.
 export function formatValue(value, locale = 'es-AR') {
   return value.toLocaleString(locale);
 }
