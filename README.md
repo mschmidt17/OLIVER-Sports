@@ -1,10 +1,10 @@
-# OLIVER — Mini reporte de sesión con IA
+# ⚽ OLIVER — Mini reporte de sesión con IA
 
 Dashboard de análisis de rendimiento deportivo para que un cuerpo técnico pueda revisar una sesión de entrenamiento o partido: consultar métricas individuales, identificar alertas de carga y generar un reporte con IA.
 
 El proyecto está desarrollado a partir del challenge técnico de OLIVER. La solución cubre el flujo completo: carga de datos, API, visualización y generación de reportes, con especial atención a los datos incompletos y a evitar información inventada por el modelo.
 
-## Funcionalidades
+## ✨ Funcionalidades
 
 - Selector de sesión.
 - Tabla de métricas por jugador, con ordenamiento por columna.
@@ -14,7 +14,7 @@ El proyecto está desarrollado a partir del challenge técnico de OLIVER. La sol
 - Estados de carga, error y ausencia de datos en la interfaz.
 - Caché de reportes para evitar llamadas repetidas al modelo.
 
-## Stack tecnológico
+## 🧰 Stack tecnológico
 
 | Área | Tecnologías |
 |---|---|
@@ -26,7 +26,7 @@ El proyecto está desarrollado a partir del challenge técnico de OLIVER. La sol
 
 ---
 
-## Cómo ejecutar el proyecto
+## 🚀 Cómo ejecutar el proyecto
 
 ### Requisitos
 
@@ -108,12 +108,12 @@ Configuración en `backend/.env`:
 
 ---
 
-## API
+## 🔌 API
 
 | Método | Ruta | Descripción |
 |---|---|---|
 | `GET` | `/sessions` | Lista las sesiones (id, fecha, título y tipo). |
-| `GET` | `/sessions/:id/metrics` | Devuelve las métricas de los jugadores, los umbrales y las alertas calculadas. |
+| `GET` | `/sessions/:id/metrics` | Devuelve las métricas de los jugadores (también por minuto jugado), los umbrales y las alertas calculadas. |
 | `POST` | `/sessions/:id/report` | Genera el reporte con IA o devuelve uno válido desde la caché. |
 
 ### Filtrar y ordenar métricas
@@ -157,7 +157,7 @@ La respuesta incluye siempre `language`, `audience`, `prompt_version`, `model`, 
 
 ---
 
-## Arquitectura
+## 🏗️ Arquitectura
 
 ```text
 Frontend (React + Vite)
@@ -188,7 +188,7 @@ Backend (Express)
 
 La lógica de negocio se mantiene separada de las rutas y de la integración con el proveedor de IA. Las rutas validan la entrada y delegan el trabajo en los servicios; las reglas de alertas y validación viven en módulos de dominio independientes.
 
-## Estructura del proyecto
+## 📁 Estructura del proyecto
 
 ```text
 backend/
@@ -212,7 +212,7 @@ backend/
     │   ├── index.js
     │   └── geminiClient.js
     └── prompts/
-        ├── sessionReport.v3.js   (informe colectivo)
+        ├── sessionReport.v4.js   (informe colectivo)
         └── playerReport.v1.js    (informe individual)
 
 frontend/
@@ -234,7 +234,7 @@ frontend/
 
 ---
 
-## Integración con IA
+## 🤖 Integración con IA
 
 ### Dos tipos de informe
 
@@ -246,7 +246,7 @@ El challenge pide que el endpoint acepte `audience` (`coach` | `player`), pero n
 | Datos que recibe la IA | Todos los jugadores de la sesión | Solo los del jugador elegido |
 | Contenido | Resumen del equipo, 2–3 destacados, alertas con acciones sugeridas | Resumen de su sesión, 1–3 puntos positivos, 0–2 aspectos a mejorar, alertas con una recomendación prudente |
 | Tono | Técnico | Segunda persona, sin jerga |
-| Prompt | `sessionReport.v3.js` | `playerReport.v1.js` |
+| Prompt | `sessionReport.v4.js` | `playerReport.v1.js` |
 
 Se mantiene un único endpoint porque el challenge pide `audience` en él; el servicio separa los dos flujos. Una ruta propia (`POST /sessions/:id/players/:playerId/report`) dejaba a `audience: "player"` sin un significado claro.
 
@@ -275,18 +275,19 @@ Pedir un JSON con esquema no alcanza: la respuesta se valida después de recibir
 1. **Estructura:** el esquema se define una vez en Zod, se convierte a JSON Schema para Gemini y se usa de nuevo para validar la respuesta.
 2. **Jugadores:** se descartan los `player_id` que no están en la sesión y los comentarios de alerta de jugadores sin alerta calculada. Si quedan menos de dos destacados, se rechaza la respuesta.
 3. **Números:** cada número de los textos tiene que existir en los datos que recibió el modelo; si no, se rechaza. El motivo de un destacado y el comentario de una alerta solo pueden citar números de **ese** jugador o de la sesión (duración, fecha, umbrales): así no se le atribuye a un jugador el dato de otro. El `player_id` no cuenta como dato. En el informe individual el contexto solo tiene al jugador, así que un número de un compañero también se rechaza.
-4. **Datos de la base:** nombres, métricas y alertas se completan desde la base. Si el modelo omite una alerta, igual aparece en el reporte.
+4. **Datos de la base:** nombres, métricas y alertas se completan desde la base. Si el modelo omite una alerta, igual aparece en el reporte. Un destacado con alertas muestra su nivel (crítico o advertencia) junto al nombre, aunque el motivo escrito por el modelo no lo mencione.
 5. **Positivos sobre métricas con alerta (individual):** cada positivo declara la métrica en la que se apoya, y si esa métrica tiene alerta se descarta: superar un umbral es algo a cuidar, no un logro. Si no queda ninguno, se rechaza. Lo agregué porque en las pruebas el modelo felicitó a un jugador por una distancia con alerta aunque el prompt lo prohibía.
 
-**Límites:** el control de números es estricto (un porcentaje bien calculado pero ausente de los datos provoca un rechazo), no detecta números escritos en palabras ("doce") y no puede saber de qué métrica habla un número que coincide con otra del mismo jugador. Tampoco se pueden verificar afirmaciones cualitativas como “la mayor distancia del equipo”, ni que un positivo hable de la métrica que declara. Por eso los niveles de alerta que se muestran siempre salen del backend, no del texto generado.
+**Límites:** el control de números es estricto (un porcentaje bien calculado pero ausente de los datos provoca un rechazo), no detecta números escritos en palabras ("doce"; el prompt pide dígitos, pero no se verifica) y no puede saber de qué métrica habla un número que coincide con otra del mismo jugador. Tampoco se pueden verificar afirmaciones cualitativas como “la mayor distancia del equipo”, ni que un positivo hable de la métrica que declara. Por eso los niveles de alerta que se muestran siempre salen del backend, no del texto generado.
 
 ### Prompts versionados
 
-Hay un prompt por tipo de informe en `backend/src/prompts/`, cada uno con su versión (`PROMPT_VERSION`) y su esquema: `sessionReport.v3.js` y `playerReport.v1.js`. En el repo quedan solo los prompts en uso; las versiones anteriores están en el historial de git:
+Hay un prompt por tipo de informe en `backend/src/prompts/`, cada uno con su versión (`PROMPT_VERSION`) y su esquema: `sessionReport.v4.js` y `playerReport.v1.js`. En el repo quedan solo los prompts en uso; las versiones anteriores están en el historial de git:
 
 - **v1:** una frase de tono por destinatario; los reportes casi no se diferenciaban.
 - **v2:** instrucciones concretas por destinatario, pero `player` seguía siendo un informe colectivo.
 - **v3 + playerReport.v1:** el colectivo conserva las instrucciones de v2 para el cuerpo técnico y el del jugador pasa a ser individual.
+- **v4:** un destacado con alertas puede seguir siendo destacado (a veces lo es justamente por su carga), pero el motivo tiene que decir que requiere atención. Los números se piden con dígitos, porque la validación no reconoce números escritos en palabras.
 
 Cada reporte informa con qué prompt y modelo se generó (tooltip sobre la fecha de generación).
 
@@ -301,7 +302,7 @@ El proveedor se elige con `AI_PROVIDER`. Timeout, reintentos y mapeo de errores 
 
 ---
 
-## Decisiones de diseño y trade-offs
+## ⚖️ Decisiones de diseño y trade-offs
 
 ### Datos incompletos
 
@@ -327,6 +328,7 @@ La caché evita volver a llamar al modelo con los mismos parámetros (milisegund
 ### Decisiones de frontend y experiencia de uso
 
 - **Ordenamiento local:** con 12 filas, la tabla se ordena en el navegador y evita una request por clic. La API igual soporta `order_by`, como pide el challenge.
+- **Métricas por minuto:** el reporte se apoya en valores por minuto para comparar jugadores con distintos minutos, así que el gráfico también los ofrece (grupo "Por minuto jugado" del selector). La API los calcula con la misma función que arma el contexto de la IA, así el entrenador ve exactamente los mismos números. No tienen umbral ni alertas, porque los umbrales del equipo se aplican a los totales. Los dejé en el gráfico y no en la tabla para no sumar cuatro columnas.
 - **Proxy de Vite:** un único origen desde el navegador, sin configurar CORS.
 - **Layout adaptable:** el reporte va al costado de los datos solo si la tabla entra completa; si no, debajo. Se resuelve con una container query, que responde al espacio disponible y no al tamaño de la ventana. Pensado para computadora.
 - **Jerarquía visual:** la tabla y las métricas son el foco; las alertas se identifican con color, ícono y texto.
@@ -334,14 +336,15 @@ La caché evita volver a llamar al modelo con los mismos parámetros (milisegund
 
 ---
 
-## Qué mejoraría con más tiempo
+## 🔭 Qué mejoraría con más tiempo
 
 ### Mejoras funcionales
 
 - **Chatbot para el cuerpo técnico:** incorporar un asistente conversacional que permita consultar aspectos puntuales de las sesiones, jugadores y métricas, utilizando los datos disponibles como contexto y aplicando las mismas validaciones que el reporte para no inventar datos.
 - **Recomendaciones más específicas:** ajustar los prompts para generar sugerencias más útiles según el rol de quien consulta. Por ejemplo, si un jugador presenta indicadores de carga elevados, ofrecer al preparador físico posibles aspectos a revisar o trabajar, siempre fundamentados en los datos y sujetos a su criterio profesional.
 - **Exportación de métricas:** permitir descargar los datos de las sesiones en distintos formatos, como CSV, Excel y PDF, para facilitar su análisis y compartirlos con el cuerpo técnico.
-- **Evolución del jugador:** incorporar un historial entre sesiones para identificar tendencias en el rendimiento. Además, le daría al informe individual una referencia propia (el jugador contra sí mismo) para fundamentar los aspectos a mejorar.
+- **Evolución del jugador:** hoy cada informe describe una única sesión, y la carga de una sola sesión no alcanza para evaluar cómo evoluciona un jugador. Un historial entre sesiones permitiría identificar tendencias y le daría al informe individual una referencia propia (el jugador contra sí mismo) para fundamentar los aspectos a mejorar.
+- **Alertas según el contexto deportivo:** hoy los umbrales son los mismos para todo el equipo. Una misma carga no significa lo mismo en un partido que en un entrenamiento, ni para un arquero que para un mediocampista. Me gustaría poder definir umbrales por tipo de sesión y por posición, y que el reporte interprete cada alerta con ese contexto, sin dejar de calcularla en el backend.
 
 ### Mejoras técnicas
 
@@ -360,7 +363,7 @@ No implementé streaming con SSE porque prioricé validar el reporte completo an
 
 ---
 
-## Uso de herramientas de IA durante el desarrollo
+## 🛠️ Uso de herramientas de IA durante el desarrollo
 
 Utilicé **Claude Code** como asistente durante el desarrollo.
 
@@ -374,7 +377,7 @@ El archivo `CLAUDE.md` de la raíz conserva las reglas y decisiones del proyecto
 
 ---
 
-## Convención de commits
+## 📝 Convención de commits
 
 Se utilizó una convención basada en [Conventional Commits](https://www.conventionalcommits.org/), con descripciones en español. Por ejemplo:
 
@@ -389,7 +392,7 @@ chore: reducir el alto del selector de sesión
 
 ---
 
-## Capturas
+## 📸 Capturas
 
 Resumen de la sesión y tabla de métricas, con los valores que alcanzan un umbral resaltados:
 

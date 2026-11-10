@@ -49,7 +49,7 @@ backend/src
   domain/    alerts.js, buildContext.js, validateReport.js — lógica pura, con tests al lado (*.test.js)
   ai/        index.js (proveedor, timeout, reintento, errores) + index.test.js, geminiClient.js
   prompts/   un prompt por tipo de informe, cada uno con su PROMPT_VERSION y esquema Zod:
-             sessionReport.v3.js (colectivo, coach) y playerReport.v1.js (individual, player).
+             sessionReport.v4.js (colectivo, coach) y playerReport.v1.js (individual, player).
              Solo los prompts en uso: las versiones anteriores quedan en el historial de git.
 frontend/src
   api/client.js, metrics.js (definiciones compartidas), components/
@@ -87,6 +87,10 @@ La carpeta de lógica pura se llama `domain/` (no `lib/`).
 - **Contexto para la IA**: sin nombres, solo `player_id`; métricas por minuto;
   `low_minutes` si jugó menos del 50% de la sesión; alertas ya calculadas.
   El individual usa el mismo `buildContext` con las métricas ya filtradas por jugador.
+  `GET /metrics` devuelve los valores por minuto con la misma función (`perMinuteMetrics`),
+  como campos del jugador (en el contexto de la IA van agrupados en `per_minute`). El
+  gráfico los ofrece en el grupo "Por minuto jugado" (`CHART_METRIC_GROUPS`), sin umbral
+  ni alertas (los umbrales son de los totales). No van en la tabla, para no sumar columnas.
 - **Validación del reporte**: Zod + descarte de `player_id` que no están en la sesión
   + rechazo (502) si el texto menciona números que no existen en los datos.
   Destacados y comentarios de alerta solo pueden citar números de su jugador o de la
@@ -94,6 +98,9 @@ La carpeta de lógica pura se llama `domain/` (no `lib/`).
   En el individual: cada positivo declara su `metric` y se descarta si esa métrica
   tiene alerta (0 positivos válidos → 502); sin alertas, el comentario de alerta se descarta.
   Nombres, métricas y alertas siempre se completan desde la base.
+  En el colectivo, un destacado con alertas no se excluye (puede destacarse por su carga):
+  el prompt pide que el motivo lo diga y el backend agrega `alert_level` (el nivel más
+  alto, calculado en código), que el reporte muestra junto al nombre.
 - **Errores de IA**: timeout con AbortController (504), un reintento ante 429/503
   (si persiste, 503), respuesta inválida (502).
 - **Caché**: tabla `reports`, clave sesión + `player_id` + idioma + destinatario
