@@ -88,6 +88,17 @@ function AlertLevels({ items, language, locale }) {
   ));
 }
 
+// Nivel de alerta junto a un destacado (lo calcula el backend): avisa que el
+// jugador requiere atención aunque el motivo escrito por la IA no lo diga.
+function LevelNote({ level, language }) {
+  return (
+    <span className={`level-note level-${level}`}>
+      <span className="level-icon" aria-hidden="true">{LEVELS[level].icon}</span>
+      {levelLabel(level, language)}
+    </span>
+  );
+}
+
 function ReportSection({ title, icon, children }) {
   return (
     <section className="report-section">
@@ -151,6 +162,7 @@ function TeamReport({ report }) {
             <li key={highlight.player_id}>
               <PlayerName player={highlight} />
               {highlight.low_minutes && <span className="cell-note">{text.lowMinutes}</span>}
+              {highlight.alert_level && <LevelNote level={highlight.alert_level} language={report.language} />}
               {highlight.reason}
             </li>
           ))}

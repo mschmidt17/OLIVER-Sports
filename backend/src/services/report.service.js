@@ -11,7 +11,7 @@ import {
   buildSessionReportPrompt,
   reportSchema,
   PROMPT_VERSION as TEAM_PROMPT_VERSION,
-} from '../prompts/sessionReport.v3.js';
+} from '../prompts/sessionReport.v4.js';
 import {
   buildPlayerReportPrompt,
   playerReportSchema,
@@ -166,6 +166,12 @@ function toAlertItem({ metric, value, level, threshold }) {
   return { metric, value, level, threshold };
 }
 
+// Nivel más alto entre las alertas de un jugador, o null si no tiene ninguna.
+function highestAlertLevel(alerts = []) {
+  if (alerts.some((alert) => alert.level === 'critical')) return 'critical';
+  return alerts.length > 0 ? 'warning' : null;
+}
+
 /**
  * Completa el reporte validado con datos de la base: nombres, números de
  * camiseta y métricas. El modelo nunca los escribe, así no los puede inventar.
@@ -174,15 +180,26 @@ function completeTeamReport(report, context, data) {
   const playersById = new Map(data.players.map((player) => [player.player_id, player]));
   const contextById = new Map(context.players.map((playerContext) => [playerContext.player_id, playerContext]));
   const commentsById = new Map(report.alertComments.map((alertComment) => [alertComment.player_id, alertComment.comment]));
+  const alertsByPlayer = Map.groupBy(context.alerts, (alert) => alert.player_id);
 
   function identify(playerId) {
     const { name, shirt_number, position } = playersById.get(playerId);
     return { player_id: playerId, name, shirt_number, position };
   }
 
+  // alert_level sale del código, no del texto: si el modelo destaca a un jugador
+  // con alertas sin mencionarlas, el informe igual lo marca.
   function toHighlight({ player_id, reason }) {
     const { minutes_played, low_minutes, metrics, per_minute } = contextById.get(player_id);
-    return { ...identify(player_id), reason, minutes_played, low_minutes, metrics, per_minute };
+    return {
+      ...identify(player_id),
+      reason,
+      alert_level: highestAlertLevel(alertsByPlayer.get(player_id)),
+      minutes_played,
+      low_minutes,
+      metrics,
+      per_minute,
+    };
   }
 
   // Las alertas salen del cálculo en código, no del modelo: así no falta
@@ -194,8 +211,6 @@ function completeTeamReport(report, context, data) {
       items: alerts.map(toAlertItem),
     };
   }
-
-  const alertsByPlayer = Map.groupBy(context.alerts, (alert) => alert.player_id);
 
   return {
     session: data.session,

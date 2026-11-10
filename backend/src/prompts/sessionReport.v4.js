@@ -1,11 +1,12 @@
-// Prompt del reporte de sesión, versión 3: informe colectivo para el cuerpo técnico.
-// Cambio respecto de v2 (en el historial de git): se quita la rama para jugadores,
-// que pasó a ser un informe individual con su propio prompt (playerReport.v1.js).
-// Las instrucciones para el cuerpo técnico son las mismas de v2.
-// Si vuelve a cambiar, se crea sessionReport.v4.js y se borra este archivo.
+// Prompt del reporte de sesión, versión 4: informe colectivo para el cuerpo técnico.
+// Cambios respecto de v3 (en el historial de git):
+// - Un destacado que tiene alertas puede seguir siendo destacado (a veces lo es
+//   justamente por su carga), pero el motivo tiene que decir que requiere atención.
+// - Los números se escriben con dígitos: la validación no reconoce números en palabras.
+// Si vuelve a cambiar, se crea sessionReport.v5.js y se borra este archivo.
 import { z } from 'zod';
 
-export const PROMPT_VERSION = 'session-report-v3';
+export const PROMPT_VERSION = 'session-report-v4';
 
 const LANGUAGE_INSTRUCTIONS = {
   es: 'Escribí todo el reporte en español.',
@@ -32,9 +33,9 @@ Qué contiene el JSON:
 
 Reglas obligatorias:
 1. Usá solo la información del JSON. No inventes jugadores, métricas ni valores.
-2. Si escribís un número, copialo exactamente como aparece en el JSON, sin
-   separador de miles (escribí 10488, no 10.488). No calcules promedios,
-   totales, diferencias ni porcentajes.
+2. Si escribís un número, usá dígitos (29, no veintinueve) y copialo exactamente
+   como aparece en el JSON, sin separador de miles (escribí 10488, no 10.488).
+   No calcules promedios, totales, diferencias ni porcentajes.
 3. No escribas nombres de jugadores ni player_id dentro de los textos.
    Cada jugador se identifica solo con el campo player_id de su elemento.
 4. summary: 2 a 4 oraciones sobre el equipo en general, sin mencionar
@@ -42,6 +43,8 @@ Reglas obligatorias:
 5. highlights: elegí 2 o 3 jugadores destacados por su rendimiento físico.
    Para comparar jugadores con distintos minutos usá per_minute.
    Si un jugador tiene low_minutes = true, aclaralo en el motivo.
+   Si un jugador destacado aparece en "alerts", el motivo tiene que decir que
+   alcanzó un umbral y requiere atención: no lo presentes solo como un logro.
    reason: una oración.
 6. alerts: escribí un comentario breve para cada player_id que aparezca en
    "alerts" del JSON, y solo para esos. No cambies el nivel de la alerta

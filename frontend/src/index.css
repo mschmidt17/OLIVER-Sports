@@ -722,6 +722,21 @@ td.alert-cell {
 
 .cell-note { margin-right: 6px; }
 
+/* Nivel de alerta de un destacado del reporte: misma forma que .cell-note,
+   con los colores del nivel (como las celdas con alerta de la tabla). */
+.level-note {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--level-bg);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--level-text);
+}
+
+.level-note .level-icon { margin-right: 4px; }
+
 /* Reloj de "pocos minutos" en la tabla: chico, gris y alineado con el número. */
 .low-minutes {
   display: inline-flex;

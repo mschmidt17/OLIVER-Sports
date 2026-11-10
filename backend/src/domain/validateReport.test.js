@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import data from '../../session_data.json' with { type: 'json' };
 import { buildContext } from './buildContext.js';
 import { validateReport, validatePlayerReport, InvalidReportError } from './validateReport.js';
-import { reportSchema } from '../prompts/sessionReport.v3.js';
+import { reportSchema } from '../prompts/sessionReport.v4.js';
 import { playerReportSchema } from '../prompts/playerReport.v1.js';
 
 // Contexto real de la sesión 103: jugadores 1 a 12; alertas para 1, 2, 5, 6 y 10.

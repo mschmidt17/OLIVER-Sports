@@ -76,7 +76,7 @@ describe('informe colectivo (coach): sin cambios de comportamiento', () => {
     const report = await teamReport();
 
     expect(report.audience).toBe('coach');
-    expect(report.prompt_version).toBe('session-report-v3');
+    expect(report.prompt_version).toBe('session-report-v4');
     expect(report.summary).toBe('Partido exigente para el equipo.');
     expect(report.highlights.map((highlight) => [highlight.player_id, highlight.name])).toEqual([
       [5, 'Santiago Molina'],
@@ -90,6 +90,32 @@ describe('informe colectivo (coach): sin cambios de comportamiento', () => {
       [9, 'rpe'],
       [9, 'workload_au'],
     ]);
+  });
+
+  it('cada destacado trae el nivel más alto de sus alertas, calculado en código', async () => {
+    // Sesión 103: el 5 tiene una crítica y advertencias, el 1 solo una advertencia, el 7 ninguna.
+    generateJson.mockResolvedValueOnce(JSON.stringify({
+      ...TEAM_RESPONSE,
+      highlights: [
+        { player_id: 5, reason: 'Gran despliegue.' },
+        { player_id: 1, reason: 'Buen ritmo.' },
+        { player_id: 7, reason: 'Sesión sólida.' },
+      ],
+    }));
+
+    const report = await teamReport();
+    expect(report.highlights.map((highlight) => [highlight.player_id, highlight.alert_level])).toEqual([
+      [5, 'critical'],
+      [1, 'warning'],
+      [7, null],
+    ]);
+  });
+
+  it('el prompt pide explicar las alertas de un destacado y escribir números con dígitos', async () => {
+    await teamReport();
+    const { systemInstruction } = generateJson.mock.calls[0][0];
+    expect(systemInstruction).toMatch(/destacado aparece en "alerts"/);
+    expect(systemInstruction).toMatch(/usá dígitos/);
   });
 
   it('el modelo recibe a todos los jugadores de la sesión', async () => {
