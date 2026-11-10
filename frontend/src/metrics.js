@@ -27,11 +27,16 @@ const PER_MINUTE_METRICS = [
   { key: 'accelerations_per_min', label: 'Aceleraciones por minuto', unit: '', thresholdNote: PER_MINUTE_NOTE },
 ];
 
-// Métricas que ofrece el selector del gráfico, en grupos (<optgroup>).
-export const CHART_METRIC_GROUPS = [
-  { label: 'Totales', metrics: METRICS },
-  { label: 'Por minuto jugado', metrics: PER_MINUTE_METRICS },
-];
+const TOTALS_GROUP = { label: 'Totales', metrics: METRICS };
+const PER_MINUTE_GROUP = { label: 'Por minuto jugado', metrics: PER_MINUTE_METRICS };
+
+// Grupos del selector del gráfico (<optgroup>). Las métricas por minuto solo se
+// ofrecen si hay jugadores con distintos minutos: si todos jugaron lo mismo, el
+// gráfico sería el de los totales con otra escala.
+export function chartMetricGroups(players) {
+  const minutesPlayed = new Set(players.map((player) => player.minutes_played));
+  return minutesPlayed.size > 1 ? [TOTALS_GROUP, PER_MINUTE_GROUP] : [TOTALS_GROUP];
+}
 
 // language: 'es' (la app) o 'en' (el reporte en inglés).
 export function metricLabel(key, language = 'es') {

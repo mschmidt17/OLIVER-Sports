@@ -71,6 +71,7 @@ export default function App() {
 
                   <section className="panel">
                     <MetricChart
+                      key={metrics.session.id}
                       players={metrics.players}
                       alerts={metrics.alerts}
                       thresholds={metrics.thresholds}

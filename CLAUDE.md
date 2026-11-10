@@ -89,8 +89,9 @@ La carpeta de lógica pura se llama `domain/` (no `lib/`).
   El individual usa el mismo `buildContext` con las métricas ya filtradas por jugador.
   `GET /metrics` devuelve los valores por minuto con la misma función (`perMinuteMetrics`),
   como campos del jugador (en el contexto de la IA van agrupados en `per_minute`). El
-  gráfico los ofrece en el grupo "Por minuto jugado" (`CHART_METRIC_GROUPS`), sin umbral
-  ni alertas (los umbrales son de los totales). No van en la tabla, para no sumar columnas.
+  gráfico los ofrece en el grupo "Por minuto jugado" (`chartMetricGroups`) solo si hay
+  jugadores con distintos minutos (si todos jugaron lo mismo, repetirían los totales);
+  sin umbral ni alertas (los umbrales son de los totales). No van en la tabla.
 - **Validación del reporte**: Zod + descarte de `player_id` que no están en la sesión
   + rechazo (502) si el texto menciona números que no existen en los datos.
   Destacados y comentarios de alerta solo pueden citar números de su jugador o de la
