@@ -19,9 +19,9 @@ const RAW_METRICS = [
   'workload_au',
 ];
 
-// Métricas de volumen que se normalizan por minuto jugado.
-// Así un suplente con 28 minutos se compara de forma justa con quien jugó 90.
-const PER_MINUTE_METRICS = {
+// Métricas de volumen que se normalizan por minuto jugado, con el nombre del
+// valor por minuto. Así un suplente con 28 minutos se compara de forma justa con quien jugó 90.
+const PER_MINUTE_NAMES = {
   total_distance_m: 'distance_m_per_min',
   high_speed_running_m: 'hsr_m_per_min',
   sprints: 'sprints_per_min',
@@ -36,9 +36,11 @@ function pick(source, keys) {
   return Object.fromEntries(keys.map((key) => [key, source[key]]));
 }
 
-function perMinuteMetrics(player) {
+// Única definición del cálculo: la usan el contexto para la IA y la API de métricas,
+// así el dashboard muestra exactamente los valores en los que se apoya el reporte.
+export function perMinuteMetrics(player) {
   const result = {};
-  for (const [metric, name] of Object.entries(PER_MINUTE_METRICS)) {
+  for (const [metric, name] of Object.entries(PER_MINUTE_NAMES)) {
     const value = player[metric];
     // Sin minutos o sin dato no hay cociente posible: null, nunca 0.
     result[name] = player.minutes_played > 0 && value != null

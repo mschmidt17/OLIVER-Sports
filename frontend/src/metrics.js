@@ -16,6 +16,26 @@ export const METRICS = [
   { key: 'workload_au', label: 'Carga', labelEn: 'Workload', unit: 'AU' },
 ];
 
+// Métricas por minuto: las mismas que recibe la IA para comparar jugadores con
+// distintos minutos, así el entrenador puede comprobar lo que dice el reporte.
+// Llegan del backend como campos del jugador, igual que las demás. No tienen
+// umbral: los umbrales del equipo se aplican a los totales (thresholdNote lo
+// explica en la leyenda del gráfico).
+const PER_MINUTE_NOTE = 'Sin umbral: los umbrales del equipo se aplican a los totales.';
+
+const PER_MINUTE_METRICS = [
+  { key: 'distance_m_per_min', label: 'Distancia por minuto', unit: 'm/min', thresholdNote: PER_MINUTE_NOTE },
+  { key: 'hsr_m_per_min', label: 'Dist. alta velocidad por minuto', unit: 'm/min', thresholdNote: PER_MINUTE_NOTE },
+  { key: 'sprints_per_min', label: 'Sprints por minuto', unit: '', thresholdNote: PER_MINUTE_NOTE },
+  { key: 'accelerations_per_min', label: 'Aceleraciones por minuto', unit: '', thresholdNote: PER_MINUTE_NOTE },
+];
+
+// Métricas que ofrece el selector del gráfico, en grupos (<optgroup>).
+export const CHART_METRIC_GROUPS = [
+  { label: 'Totales', metrics: METRICS },
+  { label: 'Por minuto jugado', metrics: PER_MINUTE_METRICS },
+];
+
 // language: 'es' (por defecto, la app) o 'en' (solo el reporte en inglés).
 export function metricLabel(key, language = 'es') {
   const metric = METRICS.find((candidate) => candidate.key === key);

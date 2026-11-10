@@ -1,6 +1,6 @@
 import db from '../db/connection.js';
 import { detectAlerts } from '../domain/alerts.js';
-import { isLowMinutes } from '../domain/buildContext.js';
+import { isLowMinutes, perMinuteMetrics } from '../domain/buildContext.js';
 
 // Lista blanca de columnas por las que se puede ordenar.
 // ORDER BY no admite parámetros (?), así que la columna se interpola en el SQL:
@@ -71,7 +71,10 @@ function buildOrderBy(orderBy, order) {
 
 /**
  * Métricas de los jugadores de una sesión, con los umbrales del equipo,
- * las alertas ya calculadas (domain/alerts.js) y low_minutes por jugador.
+ * las alertas ya calculadas (domain/alerts.js) y, por jugador, low_minutes y
+ * los valores por minuto que recibe la IA (distance_m_per_min, ...). Van como
+ * campos del jugador, igual que el resto de las métricas: el frontend lee todas
+ * de la misma forma. (En el contexto de la IA van agrupados en per_minute.)
  * Así el frontend solo pinta: las reglas de negocio viven en domain/.
  * Devuelve null si la sesión no existe (la ruta lo traduce a 404).
  */
@@ -95,7 +98,11 @@ export function getSessionMetrics(sessionId, { playerId, orderBy, order } = {}) 
   const players = db
     .prepare(sql)
     .all({ sessionId, playerId })
-    .map((player) => ({ ...player, low_minutes: isLowMinutes(player.minutes_played, session.duration_min) }));
+    .map((player) => ({
+      ...player,
+      low_minutes: isLowMinutes(player.minutes_played, session.duration_min),
+      ...perMinuteMetrics(player),
+    }));
   const thresholds = getSessionThresholds(sessionId);
 
   return { session, thresholds, players, alerts: detectAlerts(players, thresholds) };

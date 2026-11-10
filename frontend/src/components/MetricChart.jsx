@@ -3,8 +3,10 @@ import {
   BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer,
 } from 'recharts';
 import {
-  METRICS, LEVELS, indexAlerts, cellMark, byShirtNumber, formatValue, shortName,
+  CHART_METRIC_GROUPS, LEVELS, indexAlerts, cellMark, byShirtNumber, formatValue, shortName,
 } from '../metrics.js';
+
+const CHART_METRICS = CHART_METRIC_GROUPS.flatMap((group) => group.metrics);
 
 // Colores del gráfico: azul para valores normales; los de estado
 // (advertencia / crítico) se reservan para alertas, nunca para otra cosa.
@@ -50,7 +52,7 @@ function missingDataNote(withoutData, metric) {
 
 export default function MetricChart({ players, alerts, thresholds }) {
   const [metricKey, setMetricKey] = useState('total_distance_m');
-  const metric = METRICS.find((candidate) => candidate.key === metricKey);
+  const metric = CHART_METRICS.find((candidate) => candidate.key === metricKey);
   const threshold = thresholds[metricKey];
   const alertIndex = indexAlerts(alerts);
 
@@ -80,8 +82,12 @@ export default function MetricChart({ players, alerts, thresholds }) {
         <label className="field field-inline">
           Métrica
           <select value={metricKey} onChange={(event) => setMetricKey(event.target.value)}>
-            {METRICS.map((option) => (
-              <option key={option.key} value={option.key}>{option.label}</option>
+            {CHART_METRIC_GROUPS.map((group) => (
+              <optgroup key={group.label} label={group.label}>
+                {group.metrics.map((option) => (
+                  <option key={option.key} value={option.key}>{option.label}</option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </label>
@@ -148,7 +154,9 @@ export default function MetricChart({ players, alerts, thresholds }) {
             {' '}{LEVELS[level].icon} {LEVELS[level].label}
           </span>
         ))}
-        {!threshold && <span className="muted">Esta métrica no tiene umbral.</span>}
+        {!threshold && (
+          <span className="muted">{metric.thresholdNote ?? 'Esta métrica no tiene umbral.'}</span>
+        )}
       </p>
 
       {withoutData.length > 0 && (

@@ -4,6 +4,7 @@ import path from 'node:path';
 import express from 'express';
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import data from '../../session_data.json' with { type: 'json' };
+import { buildContext } from '../domain/buildContext.js';
 
 // Prueba el contrato HTTP de las rutas de sesiones:
 // - GET /sessions y GET /sessions/:id/metrics: datos, filtro, orden y errores.
@@ -133,6 +134,20 @@ describe('GET /sessions/:id/metrics: datos', () => {
     const { body } = await getJson(`/sessions/${SESSION_ID}/metrics`);
     const lowMinutesIds = body.players.filter((player) => player.low_minutes);
     expect(playerIds(lowMinutesIds)).toEqual([11]);
+  });
+
+  it('los valores por minuto de cada jugador son los mismos que recibe la IA', async () => {
+    const { body } = await getJson(`/sessions/${SESSION_ID}/metrics`);
+    const context = buildContext({
+      session: sessionData,
+      players: sessionData.player_sessions,
+      thresholds: data.thresholds,
+    });
+
+    for (const playerContext of context.players) {
+      const player = body.players.find((candidate) => candidate.player_id === playerContext.player_id);
+      expect(player).toMatchObject(playerContext.per_minute);
+    }
   });
 });
 
