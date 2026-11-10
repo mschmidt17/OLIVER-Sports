@@ -171,9 +171,9 @@ function toAlertItem({ metric, value, level, threshold }) {
  * camiseta y métricas. El modelo nunca los escribe, así no los puede inventar.
  */
 function completeTeamReport(report, context, data) {
-  const playersById = new Map(data.players.map((p) => [p.player_id, p]));
-  const contextById = new Map(context.players.map((p) => [p.player_id, p]));
-  const commentsById = new Map(report.alertComments.map((a) => [a.player_id, a.comment]));
+  const playersById = new Map(data.players.map((player) => [player.player_id, player]));
+  const contextById = new Map(context.players.map((playerContext) => [playerContext.player_id, playerContext]));
+  const commentsById = new Map(report.alertComments.map((alertComment) => [alertComment.player_id, alertComment.comment]));
 
   function identify(playerId) {
     const { name, shirt_number, position } = playersById.get(playerId);
@@ -195,14 +195,14 @@ function completeTeamReport(report, context, data) {
     };
   }
 
-  const alertsByPlayer = Map.groupBy(context.alerts, (a) => a.player_id);
+  const alertsByPlayer = Map.groupBy(context.alerts, (alert) => alert.player_id);
 
   return {
     session: data.session,
     summary: report.summary,
     highlights: report.highlights.map(toHighlight),
     alerts: [...alertsByPlayer].map(toAlert),
-    missing_data: context.missing_data.map((m) => ({ ...identify(m.player_id), metric: m.metric })),
+    missing_data: context.missing_data.map((missing) => ({ ...identify(missing.player_id), metric: missing.metric })),
   };
 }
 
@@ -223,6 +223,6 @@ function completePlayerReport(report, context, data) {
     improvements: report.improvements,
     alerts: context.alerts.map(toAlertItem),
     alert_comment: report.alertComment,
-    missing_data: context.missing_data.map((m) => m.metric),
+    missing_data: context.missing_data.map((missing) => missing.metric),
   };
 }

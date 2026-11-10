@@ -54,8 +54,8 @@ function readingsOf(numberText) {
   ];
 }
 
-// Junta todos los números presentes en el contexto, incluidos los que
-// aparecen dentro de textos (por ejemplo, la fecha de la sesión).
+// Junta todos los números de un valor, incluidos los que aparecen dentro
+// de textos (por ejemplo, la fecha de la sesión).
 function collectNumbers(value, found = new Set()) {
   if (typeof value === 'number') {
     found.add(value);
@@ -67,20 +67,36 @@ function collectNumbers(value, found = new Set()) {
   return found;
 }
 
-// Lanza InvalidReportError si alguno de los textos tiene un número
-// que no aparece en el contexto que recibió el modelo.
-function assertOnlyKnownNumbers(texts, context) {
-  const knownNumbers = collectNumbers(context);
+// Números que un texto puede citar: los de la sesión (duración, fecha, umbrales)
+// y los medidos de los jugadores indicados. El player_id no cuenta: es un
+// identificador, no un dato, y el prompt prohíbe escribirlo.
+function knownNumbers(context, players) {
+  const found = collectNumbers([context.session, context.thresholds]);
+  for (const player of players) {
+    collectNumbers([player.minutes_played, player.metrics, player.per_minute], found);
+  }
+  return found;
+}
 
+// Lanza InvalidReportError si alguno de los textos tiene un número
+// que no está en `known`. `source` nombra esos datos en el mensaje.
+function assertOnlyKnownNumbers(texts, known, source = 'los datos') {
   const unknownNumbers = texts
     .flatMap((text) => text.match(NUMBER_PATTERN) ?? [])
-    .filter((match) => !readingsOf(match).some((n) => knownNumbers.has(n)));
+    .filter((match) => !readingsOf(match).some((reading) => known.has(reading)));
 
   if (unknownNumbers.length > 0) {
     throw new InvalidReportError(
-      `El reporte menciona números que no están en los datos: ${unknownNumbers.join(', ')}`,
+      `El reporte menciona números que no están en ${source}: ${unknownNumbers.join(', ')}`,
     );
   }
+}
+
+// Un texto sobre un jugador (motivo de destacado o comentario de alerta) solo
+// puede citar números suyos o de la sesión: así no se le atribuye el dato de otro.
+function assertPlayerNumbers(text, playerId, context) {
+  const player = context.players.find((candidate) => candidate.player_id === playerId);
+  assertOnlyKnownNumbers([text], knownNumbers(context, [player]), `los datos del jugador ${playerId}`);
 }
 
 /**
@@ -88,6 +104,7 @@ function assertOnlyKnownNumbers(texts, context) {
  * `schema` es el esquema Zod del prompt que generó la respuesta.
  * - JSON inválido o con formato incorrecto  -> InvalidReportError (502).
  * - Un número que no existe en los datos     -> InvalidReportError (502).
+ *   En destacados y alertas, solo valen los números de ese jugador y de la sesión.
  * - player_id que no está en la sesión        -> se descarta ese elemento.
  * - Menos de 2 destacados tras el descarte    -> InvalidReportError (502).
  * - Comentario de alerta para un jugador sin alerta calculada -> se descarta.
@@ -95,8 +112,8 @@ function assertOnlyKnownNumbers(texts, context) {
 export function validateReport(rawText, context, schema) {
   const data = parseWithSchema(rawText, schema);
 
-  const sessionPlayerIds = new Set(context.players.map((p) => p.player_id));
-  const alertedPlayerIds = new Set(context.alerts.map((a) => a.player_id));
+  const sessionPlayerIds = new Set(context.players.map((player) => player.player_id));
+  const alertedPlayerIds = new Set(context.alerts.map((alert) => alert.player_id));
 
   const report = {
     summary: data.summary,
@@ -112,11 +129,14 @@ export function validateReport(rawText, context, schema) {
     );
   }
 
-  assertOnlyKnownNumbers([
-    report.summary,
-    ...report.highlights.map((h) => h.reason),
-    ...report.alertComments.map((a) => a.comment),
-  ], context);
+  // El resumen habla del equipo: puede citar cualquier dato de la sesión.
+  assertOnlyKnownNumbers([report.summary], knownNumbers(context, context.players));
+  for (const highlight of report.highlights) {
+    assertPlayerNumbers(highlight.reason, highlight.player_id, context);
+  }
+  for (const alertComment of report.alertComments) {
+    assertPlayerNumbers(alertComment.comment, alertComment.player_id, context);
+  }
   return report;
 }
 
@@ -131,11 +151,11 @@ export function validateReport(rawText, context, schema) {
  */
 export function validatePlayerReport(rawText, context, schema) {
   const data = parseWithSchema(rawText, schema);
-  const alertedMetrics = new Set(context.alerts.map((a) => a.metric));
+  const alertedMetrics = new Set(context.alerts.map((alert) => alert.metric));
 
   const report = {
     summary: data.summary,
-    positives: data.positives.filter((p) => !alertedMetrics.has(p.metric)),
+    positives: data.positives.filter((positive) => !alertedMetrics.has(positive.metric)),
     improvements: data.improvements,
     alertComment: context.alerts.length > 0 ? data.alert_comment : null,
   };
@@ -146,9 +166,9 @@ export function validatePlayerReport(rawText, context, schema) {
 
   assertOnlyKnownNumbers([
     report.summary,
-    ...report.positives.map((p) => p.text),
+    ...report.positives.map((positive) => positive.text),
     ...report.improvements,
     report.alertComment ?? '',
-  ], context);
+  ], knownNumbers(context, context.players));
   return report;
 }

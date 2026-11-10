@@ -18,7 +18,7 @@ export const METRICS = [
 
 // language: 'es' (por defecto, la app) o 'en' (solo el reporte en inglés).
 export function metricLabel(key, language = 'es') {
-  const metric = METRICS.find((m) => m.key === key);
+  const metric = METRICS.find((candidate) => candidate.key === key);
   if (!metric) return key;
   return language === 'en' ? metric.labelEn : metric.label;
 }
@@ -83,8 +83,8 @@ export function cellMark(player, metricKey, alertIndex) {
 
 // Orden por número de camiseta: el de la tabla por defecto, que repiten el
 // gráfico y la fila de resumen para que todo se lea en el mismo orden.
-export function byShirtNumber(a, b) {
-  return a.shirt_number - b.shirt_number;
+export function byShirtNumber(first, second) {
+  return first.shirt_number - second.shirt_number;
 }
 
 // locale: el reporte en inglés usa 'en-US' (10,488); en español, 10.488.

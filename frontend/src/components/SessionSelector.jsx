@@ -6,10 +6,10 @@ export default function SessionSelector({ sessions, selectedId, onChange }) {
   return (
     <label className="field field-inline">
       Sesión
-      <select value={selectedId ?? ''} onChange={(e) => onChange(Number(e.target.value))}>
-        {sessions.map((s) => (
-          <option key={s.id} value={s.id}>
-            {formatDate(s.date)} · {s.title}
+      <select value={selectedId ?? ''} onChange={(event) => onChange(Number(event.target.value))}>
+        {sessions.map((session) => (
+          <option key={session.id} value={session.id}>
+            {formatDate(session.date)} · {session.title}
           </option>
         ))}
       </select>

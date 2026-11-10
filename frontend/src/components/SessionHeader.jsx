@@ -17,7 +17,7 @@ function playersWithCount(cellPlayers) {
     countById.set(player.player_id, entry);
   }
   return [...countById.values()]
-    .sort((a, b) => b.count - a.count || byShirtNumber(a.player, b.player));
+    .sort((first, second) => second.count - first.count || byShirtNumber(first.player, second.player));
 }
 
 // "Molina (2)" si tiene más de una celda; si no, solo "Molina".
@@ -83,18 +83,18 @@ export default function SessionHeader({ session, players, alerts }) {
   const summary = [
     {
       label: 'Críticas',
-      cells: playersOfCells((c) => c.alert?.level === 'critical'),
+      cells: playersOfCells((cell) => cell.alert?.level === 'critical'),
       level: 'critical',
       icon: LEVELS.critical.icon,
     },
     {
       label: 'Advertencias',
-      cells: playersOfCells((c) => c.alert?.level === 'warning'),
+      cells: playersOfCells((cell) => cell.alert?.level === 'warning'),
       level: 'warning',
       icon: LEVELS.warning.icon,
     },
-    { label: 'Datos faltantes', cells: playersOfCells((c) => c.missing), icon: <InfoIcon /> },
-    { label: 'Pocos minutos', cells: playersOfCells((c) => c.lowMinutes), icon: <ClockIcon /> },
+    { label: 'Datos faltantes', cells: playersOfCells((cell) => cell.missing), icon: <InfoIcon /> },
+    { label: 'Pocos minutos', cells: playersOfCells((cell) => cell.lowMinutes), icon: <ClockIcon /> },
   ];
 
   return (

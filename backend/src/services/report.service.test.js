@@ -78,15 +78,15 @@ describe('informe colectivo (coach): sin cambios de comportamiento', () => {
     expect(report.audience).toBe('coach');
     expect(report.prompt_version).toBe('session-report-v3');
     expect(report.summary).toBe('Partido exigente para el equipo.');
-    expect(report.highlights.map((h) => [h.player_id, h.name])).toEqual([
+    expect(report.highlights.map((highlight) => [highlight.player_id, highlight.name])).toEqual([
       [5, 'Santiago Molina'],
       [10, 'Bruno Acosta'],
     ]);
     // Las alertas salen del código: están todas, aunque el modelo comentó solo una.
-    expect(report.alerts.map((a) => a.player_id)).toEqual([1, 2, 5, 6, 10]);
-    expect(report.alerts.find((a) => a.player_id === 5).comment).toBe('Controlar su recuperación.');
-    expect(report.alerts.find((a) => a.player_id === 1).comment).toBeNull();
-    expect(report.missing_data.map((m) => [m.player_id, m.metric])).toEqual([
+    expect(report.alerts.map((alert) => alert.player_id)).toEqual([1, 2, 5, 6, 10]);
+    expect(report.alerts.find((alert) => alert.player_id === 5).comment).toBe('Controlar su recuperación.');
+    expect(report.alerts.find((alert) => alert.player_id === 1).comment).toBeNull();
+    expect(report.missing_data.map((missing) => [missing.player_id, missing.metric])).toEqual([
       [9, 'rpe'],
       [9, 'workload_au'],
     ]);
@@ -123,8 +123,8 @@ describe('informe individual (player)', () => {
   it('el modelo recibe solo los datos del jugador elegido', async () => {
     await playerReport(5);
     const context = contextSentToModel();
-    expect(context.players.map((p) => p.player_id)).toEqual([5]);
-    expect(context.alerts.every((a) => a.player_id === 5)).toBe(true);
+    expect(context.players.map((player) => player.player_id)).toEqual([5]);
+    expect(context.alerts.every((alert) => alert.player_id === 5)).toBe(true);
   });
 
   it('jugador sin alertas (7): sin alertas y sin comentario, aunque el modelo lo escriba', async () => {
@@ -147,7 +147,7 @@ describe('informe individual (player)', () => {
   });
 
   it('jugador que no participó (o no existe) -> 404, sin llamar a la IA', async () => {
-    const error = await playerReport(99).catch((e) => e);
+    const error = await playerReport(99).catch((thrown) => thrown);
     expect(error).toBeInstanceOf(PlayerNotInSessionError);
     expect(error.status).toBe(404);
     expect(error.message).toBe('El jugador 99 no participó en la sesión 103');
@@ -182,7 +182,7 @@ describe('caché', () => {
     expect(generateJson).toHaveBeenCalledTimes(2);
     expect(again.cached).toBe(true);
     expect(again.player.player_id).toBe(5);
-    expect(cachedRows().map((r) => r.player_id)).toEqual([5, 7]);
+    expect(cachedRows().map((row) => row.player_id)).toEqual([5, 7]);
   });
 
   it('el colectivo se guarda con player_id 0 y no se mezcla con los individuales', async () => {
@@ -192,7 +192,7 @@ describe('caché', () => {
 
     expect(team.cached).toBe(true);
     expect(team.audience).toBe('coach');
-    expect(cachedRows().map((r) => [r.player_id, r.audience])).toEqual([
+    expect(cachedRows().map((row) => [row.player_id, row.audience])).toEqual([
       [0, 'coach'],
       [5, 'player'],
     ]);

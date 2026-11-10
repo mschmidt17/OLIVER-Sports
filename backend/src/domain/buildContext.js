@@ -85,7 +85,7 @@ export function buildContext({ session, players, thresholds }) {
       duration_min: session.duration_min,
     },
     thresholds,
-    players: players.map((p) => buildPlayerContext(p, session.duration_min)),
+    players: players.map((player) => buildPlayerContext(player, session.duration_min)),
     alerts: detectAlerts(players, thresholds),
     missing_data: findMissingData(players),
   };

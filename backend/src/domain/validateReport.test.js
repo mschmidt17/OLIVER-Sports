@@ -6,7 +6,7 @@ import { reportSchema } from '../prompts/sessionReport.v3.js';
 import { playerReportSchema } from '../prompts/playerReport.v1.js';
 
 // Contexto real de la sesión 103: jugadores 1 a 12; alertas para 1, 2, 5, 6 y 10.
-const session = data.sessions.find((s) => s.id === 103);
+const session = data.sessions.find((session) => session.id === 103);
 const context = buildContext({
   session,
   players: session.player_sessions,
@@ -36,7 +36,7 @@ describe('validateReport: formato', () => {
     const report = validate(modelResponse());
 
     expect(report.summary).toBe('Partido de alta exigencia para el equipo.');
-    expect(report.highlights.map((h) => h.player_id)).toEqual([5, 10]);
+    expect(report.highlights.map((highlight) => highlight.player_id)).toEqual([5, 10]);
     expect(report.alertComments).toEqual([
       { player_id: 5, comment: 'Carga muy alta, conviene recuperación.' },
     ]);
@@ -46,8 +46,8 @@ describe('validateReport: formato', () => {
     let error;
     try {
       validate('esto no es JSON');
-    } catch (e) {
-      error = e;
+    } catch (thrown) {
+      error = thrown;
     }
     expect(error).toBeInstanceOf(InvalidReportError);
     expect(error.status).toBe(502);
@@ -80,7 +80,7 @@ describe('validateReport: jugadores que no existen', () => {
         { player_id: 99, reason: 'Jugador inventado.' },
       ],
     });
-    expect(validate(raw).highlights.map((h) => h.player_id)).toEqual([5, 10]);
+    expect(validate(raw).highlights.map((highlight) => highlight.player_id)).toEqual([5, 10]);
   });
 
   it('si tras el descarte quedan menos de 2 destacados -> InvalidReportError', () => {
@@ -101,7 +101,7 @@ describe('validateReport: jugadores que no existen', () => {
         { player_id: 7, comment: 'Alerta inventada.' },
       ],
     });
-    expect(validate(raw).alertComments.map((a) => a.player_id)).toEqual([5]);
+    expect(validate(raw).alertComments.map((alertComment) => alertComment.player_id)).toEqual([5]);
   });
 
   it('si el modelo repite un jugador, queda una sola vez', () => {
@@ -145,6 +145,38 @@ describe('validateReport: números que no existen', () => {
     const raw = modelResponse({ summary: 'La velocidad máxima fue de 31,6 km/h.' });
     expect(() => validate(raw)).not.toThrow();
   });
+
+  it('el player_id no cuenta como dato: 3 solo es el id de un jugador', () => {
+    const raw = modelResponse({ summary: '3 jugadores superaron la carga recomendada.' });
+    expect(() => validate(raw)).toThrow(/datos: 3$/);
+  });
+});
+
+describe('validateReport: números atribuidos a otro jugador', () => {
+  it('rechaza en un destacado un número de otro jugador (29 sprints son del 10, no del 7)', () => {
+    const raw = modelResponse({
+      highlights: [
+        { player_id: 5, reason: 'Recorrió 10488 metros.' },
+        { player_id: 7, reason: 'Hizo 29 sprints.' },
+      ],
+    });
+    expect(() => validate(raw)).toThrow(/jugador 7: 29/);
+  });
+
+  it('rechaza en un comentario de alerta un número de otro jugador (810 no es del 1)', () => {
+    const raw = modelResponse({ alerts: [{ player_id: 1, comment: 'Llegó a 810 de carga.' }] });
+    expect(() => validate(raw)).toThrow(/jugador 1: 810/);
+  });
+
+  it('en un destacado acepta sus datos, sus valores por minuto y los de la sesión', () => {
+    const raw = modelResponse({
+      highlights: [
+        { player_id: 5, reason: 'En 90 minutos llegó a 810, por encima del umbral de 750.' },
+        { player_id: 10, reason: 'Hizo 29 sprints.' },
+      ],
+    });
+    expect(() => validate(raw)).not.toThrow();
+  });
 });
 
 // Informe individual: contexto de la sesión 103 con un solo jugador, como lo
@@ -152,7 +184,7 @@ describe('validateReport: números que no existen', () => {
 function playerContext(playerId) {
   return buildContext({
     session,
-    players: session.player_sessions.filter((p) => p.player_id === playerId),
+    players: session.player_sessions.filter((player) => player.player_id === playerId),
     thresholds: data.thresholds,
   });
 }

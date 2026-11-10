@@ -95,7 +95,7 @@ export function getSessionMetrics(sessionId, { playerId, orderBy, order } = {}) 
   const players = db
     .prepare(sql)
     .all({ sessionId, playerId })
-    .map((p) => ({ ...p, low_minutes: isLowMinutes(p.minutes_played, session.duration_min) }));
+    .map((player) => ({ ...player, low_minutes: isLowMinutes(player.minutes_played, session.duration_min) }));
   const thresholds = getSessionThresholds(sessionId);
 
   return { session, thresholds, players, alerts: detectAlerts(players, thresholds) };

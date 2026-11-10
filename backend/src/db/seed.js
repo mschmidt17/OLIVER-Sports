@@ -25,8 +25,8 @@ function insertPlayers(players, teamId) {
     INSERT INTO players (id, team_id, name, position, shirt_number)
     VALUES (?, ?, ?, ?, ?)
   `);
-  for (const p of players) {
-    insert.run(p.id, teamId, p.name, p.position, p.shirt_number);
+  for (const player of players) {
+    insert.run(player.id, teamId, player.name, player.position, player.shirt_number);
   }
 }
 
@@ -48,10 +48,10 @@ function insertSessions(sessions, teamId) {
     )
   `);
 
-  for (const s of sessions) {
-    insertSession.run(s.id, teamId, s.date, s.title, s.type, s.duration_min);
-    for (const row of s.player_sessions) {
-      insertPlayerSession.run({ session_id: s.id, ...row });
+  for (const session of sessions) {
+    insertSession.run(session.id, teamId, session.date, session.title, session.type, session.duration_min);
+    for (const row of session.player_sessions) {
+      insertPlayerSession.run({ session_id: session.id, ...row });
     }
   }
 }

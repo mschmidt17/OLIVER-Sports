@@ -20,13 +20,15 @@ const SORT_DIRECTIONS = {
 
 // Los null ("sin dato") van siempre al final, en cualquier dirección.
 function sortPlayers(players, { key, direction }) {
-  return [...players].sort((p1, p2) => {
-    const a = p1[key];
-    const b = p2[key];
-    if (a == null) return b == null ? 0 : 1;
-    if (b == null) return -1;
+  return [...players].sort((first, second) => {
+    const firstValue = first[key];
+    const secondValue = second[key];
+    if (firstValue == null) return secondValue == null ? 0 : 1;
+    if (secondValue == null) return -1;
 
-    const result = typeof a === 'string' ? a.localeCompare(b, 'es') : a - b;
+    const result = typeof firstValue === 'string'
+      ? firstValue.localeCompare(secondValue, 'es')
+      : firstValue - secondValue;
     return direction === 'asc' ? result : -result;
   });
 }

@@ -6,10 +6,10 @@ import { detectAlerts } from './alerts.js';
 // Arma la misma entrada que va a recibir buildContext desde el service:
 // métricas de la sesión + datos del jugador (incluido el nombre).
 function inputFor(sessionId) {
-  const session = data.sessions.find((s) => s.id === sessionId);
-  const players = session.player_sessions.map((ps) => ({
-    ...data.players.find((p) => p.id === ps.player_id),
-    ...ps,
+  const session = data.sessions.find((session) => session.id === sessionId);
+  const players = session.player_sessions.map((playerSession) => ({
+    ...data.players.find((player) => player.id === playerSession.player_id),
+    ...playerSession,
   }));
   return { session, players, thresholds: data.thresholds };
 }
@@ -19,7 +19,7 @@ function contextFor(sessionId) {
 }
 
 function playerIn(context, playerId) {
-  return context.players.find((p) => p.player_id === playerId);
+  return context.players.find((player) => player.player_id === playerId);
 }
 
 describe('buildContext', () => {
@@ -32,7 +32,7 @@ describe('buildContext', () => {
   });
 
   it('en la sesión 101 nadie tiene low_minutes', () => {
-    expect(contextFor(101).players.some((p) => p.low_minutes)).toBe(false);
+    expect(contextFor(101).players.some((player) => player.low_minutes)).toBe(false);
   });
 
   it('calcula métricas por minuto redondeadas a 2 decimales', () => {
@@ -97,14 +97,14 @@ describe('buildContext con un solo jugador (informe individual)', () => {
   // Así lo arma el service: métricas filtradas por player_id antes de buildContext.
   function playerContextFor(sessionId, playerId) {
     const input = inputFor(sessionId);
-    return buildContext({ ...input, players: input.players.filter((p) => p.player_id === playerId) });
+    return buildContext({ ...input, players: input.players.filter((player) => player.player_id === playerId) });
   }
 
   it('solo incluye al jugador, sus alertas y sus datos faltantes', () => {
     const context = playerContextFor(103, 5);
-    expect(context.players.map((p) => p.player_id)).toEqual([5]);
+    expect(context.players.map((player) => player.player_id)).toEqual([5]);
     expect(context.alerts.length).toBeGreaterThan(0);
-    expect(context.alerts.every((a) => a.player_id === 5)).toBe(true);
+    expect(context.alerts.every((alert) => alert.player_id === 5)).toBe(true);
     expect(context.missing_data).toEqual([]);
   });
 
@@ -115,7 +115,7 @@ describe('buildContext con un solo jugador (informe individual)', () => {
   it('jugador con datos faltantes (9): null en las métricas y en missing_data', () => {
     const context = playerContextFor(103, 9);
     expect(context.players[0].metrics.rpe).toBeNull();
-    expect(context.missing_data.map((m) => m.metric)).toEqual(['rpe', 'workload_au']);
+    expect(context.missing_data.map((missing) => missing.metric)).toEqual(['rpe', 'workload_au']);
   });
 
   it('no contiene números de los compañeros', () => {

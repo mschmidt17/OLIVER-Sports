@@ -135,7 +135,7 @@ function ReportFrame({ session, report, onRegenerate, onClose, children }) {
 function TeamReport({ report }) {
   const text = REPORT_TEXT[report.language];
   // Un jugador puede tener varias métricas sin dato: se agrupan en una sola línea.
-  const missingByPlayer = Map.groupBy(report.missing_data, (m) => m.player_id);
+  const missingByPlayer = Map.groupBy(report.missing_data, (missing) => missing.player_id);
 
   return (
     <>
@@ -147,11 +147,11 @@ function TeamReport({ report }) {
       <ReportSection title={text.highlights} icon={<StarIcon />}>
         {/* Siempre hay 2 o 3: el backend rechaza un reporte con menos. */}
         <ul className="report-list">
-          {report.highlights.map((h) => (
-            <li key={h.player_id}>
-              <PlayerName player={h} />
-              {h.low_minutes && <span className="cell-note">{text.lowMinutes}</span>}
-              {h.reason}
+          {report.highlights.map((highlight) => (
+            <li key={highlight.player_id}>
+              <PlayerName player={highlight} />
+              {highlight.low_minutes && <span className="cell-note">{text.lowMinutes}</span>}
+              {highlight.reason}
             </li>
           ))}
         </ul>
@@ -162,11 +162,11 @@ function TeamReport({ report }) {
           <p className="empty">{text.noAlerts}</p>
         ) : (
           <ul className="report-list">
-            {report.alerts.map((a) => (
-              <li key={a.player_id}>
-                <PlayerName player={a} />
-                <AlertLevels items={a.items} language={report.language} locale={text.locale} />
-                {a.comment && <p className="report-comment">{a.comment}</p>}
+            {report.alerts.map((alert) => (
+              <li key={alert.player_id}>
+                <PlayerName player={alert} />
+                <AlertLevels items={alert.items} language={report.language} locale={text.locale} />
+                {alert.comment && <p className="report-comment">{alert.comment}</p>}
               </li>
             ))}
           </ul>
@@ -179,7 +179,7 @@ function TeamReport({ report }) {
             {[...missingByPlayer].map(([playerId, items]) => (
               <li key={playerId}>
                 <PlayerName player={items[0]} />
-                {items.map((m) => metricLabel(m.metric, report.language)).join(', ')}
+                {items.map((missing) => metricLabel(missing.metric, report.language)).join(', ')}
               </li>
             ))}
           </ul>
@@ -213,7 +213,7 @@ function PlayerReport({ report }) {
         {/* Siempre hay al menos uno: el backend rechaza un informe sin positivos. */}
         <ul className="report-list">
           {/* Listas fijas (no se reordenan): el índice alcanza como key. */}
-          {report.positives.map((p, i) => <li key={i}>{p.text}</li>)}
+          {report.positives.map((positive, index) => <li key={index}>{positive.text}</li>)}
         </ul>
       </ReportSection>
 
@@ -221,7 +221,7 @@ function PlayerReport({ report }) {
       {report.improvements.length > 0 && (
         <ReportSection title={text.improvements} icon={<TrendUpIcon />}>
           <ul className="report-list">
-            {report.improvements.map((item, i) => <li key={i}>{item}</li>)}
+            {report.improvements.map((improvement, index) => <li key={index}>{improvement}</li>)}
           </ul>
         </ReportSection>
       )}
@@ -292,14 +292,14 @@ export default function ReportPanel({ session, players }) {
       <div className="controls">
         <label className="field">
           Idioma
-          <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+          <select value={language} onChange={(event) => setLanguage(event.target.value)}>
             <option value="es">Español</option>
             <option value="en">English</option>
           </select>
         </label>
         <label className="field">
           Destinatario
-          <select value={audience} onChange={(e) => setAudience(e.target.value)}>
+          <select value={audience} onChange={(event) => setAudience(event.target.value)}>
             <option value="coach">Cuerpo técnico</option>
             <option value="player">Jugador (individual)</option>
           </select>
@@ -307,10 +307,10 @@ export default function ReportPanel({ session, players }) {
         {isPlayerReport && (
           <label className="field">
             Jugador
-            <select value={playerId} onChange={(e) => setPlayerId(e.target.value)}>
+            <select value={playerId} onChange={(event) => setPlayerId(event.target.value)}>
               <option value="" disabled>Elegí un jugador</option>
-              {players.toSorted(byShirtNumber).map((p) => (
-                <option key={p.player_id} value={p.player_id}>#{p.shirt_number} {p.name}</option>
+              {players.toSorted(byShirtNumber).map((player) => (
+                <option key={player.player_id} value={player.player_id}>#{player.shirt_number} {player.name}</option>
               ))}
             </select>
           </label>

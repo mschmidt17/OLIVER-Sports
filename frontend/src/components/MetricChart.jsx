@@ -43,29 +43,29 @@ function fixedScaleTicks(max) {
 // Explica el hueco en el gráfico: "Mateo Suárez no tiene dato de RPE en esta
 // sesión, por eso no tiene barra." No se dibuja una barra en 0 porque sería falso.
 function missingDataNote(withoutData, metric) {
-  const names = new Intl.ListFormat('es').format(withoutData.map((d) => d.name)); // "A y B"
+  const names = new Intl.ListFormat('es').format(withoutData.map((bar) => bar.name)); // "A y B"
   const verb = withoutData.length === 1 ? 'tiene' : 'tienen';
   return `${names} no ${verb} dato de ${metric.label} en esta sesión, por eso no ${verb} barra.`;
 }
 
 export default function MetricChart({ players, alerts, thresholds }) {
   const [metricKey, setMetricKey] = useState('total_distance_m');
-  const metric = METRICS.find((m) => m.key === metricKey);
+  const metric = METRICS.find((candidate) => candidate.key === metricKey);
   const threshold = thresholds[metricKey];
   const alertIndex = indexAlerts(alerts);
 
   // El color de cada barra sale de cellMark, la misma marca que usa la tabla.
   const data = [...players]
     .sort(byShirtNumber)
-    .map((p) => ({
-      id: p.player_id,
-      label: shortName(p.name),
-      shirt: p.shirt_number,
-      name: p.name,
-      value: p[metricKey],
-      level: cellMark(p, metricKey, alertIndex).alert?.level,
+    .map((player) => ({
+      id: player.player_id,
+      label: shortName(player.name),
+      shirt: player.shirt_number,
+      name: player.name,
+      value: player[metricKey],
+      level: cellMark(player, metricKey, alertIndex).alert?.level,
     }));
-  const withoutData = data.filter((d) => d.value == null);
+  const withoutData = data.filter((bar) => bar.value == null);
 
   // Niveles con umbral definido para esta métrica (advertencia y, a veces, crítico).
   // Se usan para las líneas del gráfico y para la leyenda: si un nivel no tiene
@@ -79,9 +79,9 @@ export default function MetricChart({ players, alerts, thresholds }) {
         <h2 className="section-title">Comparación por jugador</h2>
         <label className="field field-inline">
           Métrica
-          <select value={metricKey} onChange={(e) => setMetricKey(e.target.value)}>
-            {METRICS.map((m) => (
-              <option key={m.key} value={m.key}>{m.label}</option>
+          <select value={metricKey} onChange={(event) => setMetricKey(event.target.value)}>
+            {METRICS.map((option) => (
+              <option key={option.key} value={option.key}>{option.label}</option>
             ))}
           </select>
         </label>
@@ -133,8 +133,8 @@ export default function MetricChart({ players, alerts, thresholds }) {
           })}
 
           <Bar dataKey="value" maxBarSize={32} radius={[3, 3, 0, 0]} isAnimationActive={false}>
-            {data.map((d) => (
-              <Cell key={d.id} fill={d.level ? LEVELS[d.level].color : NORMAL_COLOR} />
+            {data.map((bar) => (
+              <Cell key={bar.id} fill={bar.level ? LEVELS[bar.level].color : NORMAL_COLOR} />
             ))}
           </Bar>
         </BarChart>

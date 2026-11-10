@@ -3,16 +3,16 @@ import data from '../../session_data.json' with { type: 'json' };
 import { detectAlerts } from './alerts.js';
 
 function alertsFor(sessionId) {
-  const session = data.sessions.find((s) => s.id === sessionId);
+  const session = data.sessions.find((session) => session.id === sessionId);
   return detectAlerts(session.player_sessions, data.thresholds);
 }
 
 // IDs de jugadores con alerta para una métrica y un nivel, ordenados.
 function playerIds(alerts, metric, level) {
   return alerts
-    .filter((a) => a.metric === metric && a.level === level)
-    .map((a) => a.player_id)
-    .sort((a, b) => a - b);
+    .filter((alert) => alert.metric === metric && alert.level === level)
+    .map((alert) => alert.player_id)
+    .sort((first, second) => first - second);
 }
 
 describe('detectAlerts con session_data.json', () => {
@@ -40,7 +40,7 @@ describe('detectAlerts con session_data.json', () => {
   });
 
   it('sesión 103: jugador 9 no se evalúa en RPE ni workload (null)', () => {
-    expect(alertsFor(103).filter((a) => a.player_id === 9)).toEqual([]);
+    expect(alertsFor(103).filter((alert) => alert.player_id === 9)).toEqual([]);
   });
 });
 
