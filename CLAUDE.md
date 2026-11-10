@@ -18,7 +18,7 @@ legible y explicable línea por línea.**
 npm install
 npm run seed     # crea/recrea backend/data/oliver.db (obligatorio antes del primer arranque)
 npm run dev      # API en http://localhost:4000 (PORT en backend/.env)
-npm test         # Vitest: domain/, ai/index.js, report.service y la ruta del reporte
+npm test         # Vitest: domain/, ai/index.js, report.service y las rutas de sesiones
                  # (estos dos con una base SQLite temporal y la IA simulada)
 
 # Frontend (desde frontend/)
@@ -89,6 +89,8 @@ La carpeta de lógica pura se llama `domain/` (no `lib/`).
   El individual usa el mismo `buildContext` con las métricas ya filtradas por jugador.
 - **Validación del reporte**: Zod + descarte de `player_id` que no están en la sesión
   + rechazo (502) si el texto menciona números que no existen en los datos.
+  Destacados y comentarios de alerta solo pueden citar números de su jugador o de la
+  sesión (duración, fecha, umbrales); el `player_id` no cuenta como dato.
   En el individual: cada positivo declara su `metric` y se descarta si esa métrica
   tiene alerta (0 positivos válidos → 502); sin alertas, el comentario de alerta se descarta.
   Nombres, métricas y alertas siempre se completan desde la base.

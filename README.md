@@ -91,7 +91,7 @@ Desde la carpeta `backend`:
 npm test
 ```
 
-Cubren la detección de alertas, el armado del contexto, la validación de la respuesta del modelo, el manejo de errores del proveedor, el servicio de reportes con su caché y la validación del body de `POST /sessions/:id/report`. Gemini está simulado (no hace falta API key) y los tests que usan la base crean una SQLite temporal, sin tocar `data/oliver.db`.
+Cubren la detección de alertas, el armado del contexto, la validación de la respuesta del modelo, el manejo de errores del proveedor, el servicio de reportes con su caché y el contrato HTTP de las rutas: `GET /sessions`, el filtro y el orden de `GET /sessions/:id/metrics` (cada columna ordenable en las dos direcciones, valores sin dato al final, parámetros inválidos) y la validación del body de `POST /sessions/:id/report`. Gemini está simulado (no hace falta API key) y los tests que usan la base crean una SQLite temporal, sin tocar `data/oliver.db`.
 
 ### Variables de entorno
 
@@ -274,11 +274,11 @@ Pedir un JSON con esquema no alcanza: la respuesta se valida después de recibir
 
 1. **Estructura:** el esquema se define una vez en Zod, se convierte a JSON Schema para Gemini y se usa de nuevo para validar la respuesta.
 2. **Jugadores:** se descartan los `player_id` que no están en la sesión y los comentarios de alerta de jugadores sin alerta calculada. Si quedan menos de dos destacados, se rechaza la respuesta.
-3. **Números:** cada número de los textos tiene que existir en los datos que recibió el modelo; si no, se rechaza. En el informe individual eso incluye los números de los compañeros, porque no están en su contexto.
+3. **Números:** cada número de los textos tiene que existir en los datos que recibió el modelo; si no, se rechaza. El motivo de un destacado y el comentario de una alerta solo pueden citar números de **ese** jugador o de la sesión (duración, fecha, umbrales): así no se le atribuye a un jugador el dato de otro. El `player_id` no cuenta como dato. En el informe individual el contexto solo tiene al jugador, así que un número de un compañero también se rechaza.
 4. **Datos de la base:** nombres, métricas y alertas se completan desde la base. Si el modelo omite una alerta, igual aparece en el reporte.
 5. **Positivos sobre métricas con alerta (individual):** cada positivo declara la métrica en la que se apoya, y si esa métrica tiene alerta se descarta: superar un umbral es algo a cuidar, no un logro. Si no queda ninguno, se rechaza. Lo agregué porque en las pruebas el modelo felicitó a un jugador por una distancia con alerta aunque el prompt lo prohibía.
 
-**Límites:** el control de números es estricto (un porcentaje bien calculado pero ausente de los datos provoca un rechazo), y no se pueden verificar afirmaciones cualitativas como “la mayor distancia del equipo”, ni que un positivo hable de la métrica que declara. Por eso los niveles de alerta que se muestran siempre salen del backend, no del texto generado.
+**Límites:** el control de números es estricto (un porcentaje bien calculado pero ausente de los datos provoca un rechazo), no detecta números escritos en palabras ("doce") y no puede saber de qué métrica habla un número que coincide con otra del mismo jugador. Tampoco se pueden verificar afirmaciones cualitativas como “la mayor distancia del equipo”, ni que un positivo hable de la métrica que declara. Por eso los niveles de alerta que se muestran siempre salen del backend, no del texto generado.
 
 ### Prompts versionados
 
@@ -336,15 +336,27 @@ La caché evita volver a llamar al modelo con los mismos parámetros (milisegund
 
 ## Qué mejoraría con más tiempo
 
+### Mejoras funcionales
+
+- **Chatbot para el cuerpo técnico:** incorporar un asistente conversacional que permita consultar aspectos puntuales de las sesiones, jugadores y métricas, utilizando los datos disponibles como contexto y aplicando las mismas validaciones que el reporte para no inventar datos.
+- **Recomendaciones más específicas:** ajustar los prompts para generar sugerencias más útiles según el rol de quien consulta. Por ejemplo, si un jugador presenta indicadores de carga elevados, ofrecer al preparador físico posibles aspectos a revisar o trabajar, siempre fundamentados en los datos y sujetos a su criterio profesional.
+- **Exportación de métricas:** permitir descargar los datos de las sesiones en distintos formatos, como CSV, Excel y PDF, para facilitar su análisis y compartirlos con el cuerpo técnico.
+- **Evolución del jugador:** incorporar un historial entre sesiones para identificar tendencias en el rendimiento. Además, le daría al informe individual una referencia propia (el jugador contra sí mismo) para fundamentar los aspectos a mejorar.
+
+### Mejoras técnicas
+
 - Incorporar migraciones de base de datos en lugar de recrear las tablas con el seed.
-- Ampliar los tests de integración al resto de los endpoints (hoy cubren la validación del body y el servicio de reportes con su caché).
 - Incorporar tests del frontend para el ordenamiento, las alertas, los resúmenes y los estados del reporte.
 - Evitar llamadas duplicadas al modelo cuando llegan solicitudes iguales en simultáneo.
-- Un reporte de evolución del jugador entre sesiones, que le daría al informe individual una referencia propia para los aspectos a mejorar.
-- Mostrar los valores faltantes directamente en el gráfico.
-- Validar mejor las afirmaciones cualitativas de los textos.
+- Mejorar la validación de las afirmaciones cualitativas generadas por la IA para reducir interpretaciones que no estén suficientemente respaldadas por los datos.
 
-No implementé streaming con SSE: el reporte se valida completo antes de mostrarse, y con streaming se leería contenido que todavía no pasó las validaciones.
+### Visualización
+
+- Mostrar los valores faltantes directamente en los gráficos para que sea más fácil identificar cuándo no hay información disponible.
+
+### Decisión sobre streaming
+
+No implementé streaming con SSE porque prioricé validar el reporte completo antes de mostrarlo. De esta manera, el usuario recibe únicamente respuestas que hayan pasado las validaciones de estructura y consistencia con los datos disponibles.
 
 ---
 
